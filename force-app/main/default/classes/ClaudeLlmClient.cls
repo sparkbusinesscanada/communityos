@@ -12,7 +12,7 @@ public with sharing class ClaudeLlmClient implements LlmClient {
 
     public ClaudeLlmClient(String model, Integer maxTokens) {
         this.model = String.isBlank(model) ? DEFAULT_MODEL : model;
-        this.maxTokens = maxTokens == null || maxTokens <= 0 ? 1024 : maxTokens;
+        this.maxTokens = maxTokens == null || maxTokens <= 0 ? 4096 : maxTokens;
     }
 
     public String modelName() {
@@ -43,6 +43,9 @@ public with sharing class ClaudeLlmClient implements LlmClient {
             throw new LlmException('Claude API returned ' + res.getStatusCode() + ': ' + res.getBody().left(500));
         }
         Map<String, Object> body = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+        if (body.get('stop_reason') == 'max_tokens') {
+            throw new LlmException('Claude hit the output limit (' + maxTokens + ' tokens) before finishing; raise Max Output Tokens in CommunityOS Settings');
+        }
         List<String> parts = new List<String>();
         for (Object block : (List<Object>) body.get('content')) {
             Map<String, Object> b = (Map<String, Object>) block;

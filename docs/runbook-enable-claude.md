@@ -18,7 +18,7 @@ Setup → Custom Settings → **CommunityOS Settings** → Manage → New (org d
 |---|---|
 | LLM Provider | `claude` |
 | LLM Model | `claude-sonnet-5` |
-| Max Output Tokens | `1024` |
+| Max Output Tokens | `4096` |
 
 To switch back to the free mock, clear LLM Provider.
 

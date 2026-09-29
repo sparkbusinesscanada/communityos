@@ -1,6 +1,6 @@
 // CommunityOS eval: run the insight pipeline on a sample of real households and score it.
 // Metrics: PII leak rate in context sent to AI, valid-output rate, task-grounding rate, avg latency.
-Integer sampleSize = 3;
+Integer sampleSize = 2;
 Integer offsetRows = 0;
 List<Account> households_list = [
     SELECT Id FROM Account

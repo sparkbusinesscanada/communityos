@@ -40,6 +40,17 @@ private class ClaudeLlmClientTest {
     }
 
     @IsTest
+    static void reportsTruncatedAnswers() {
+        Test.setMock(HttpCalloutMock.class, new ClaudeMock(200, '{"stop_reason":"max_tokens","content":[{"type":"text","text":"{\\"summary\\":\\"cut"}]}'));
+        try {
+            new ClaudeLlmClient(null, 100).complete('sys', '{}');
+            System.assert(false, 'Expected exception');
+        } catch (ClaudeLlmClient.LlmException e) {
+            System.assert(e.getMessage().contains('output limit'));
+        }
+    }
+
+    @IsTest
     static void factoryHonoursSetting() {
         System.assert(LlmClientFactory.get() instanceof MockLlmClient, 'Default is mock');
         insert new CommunityOS_Settings__c(SetupOwnerId = UserInfo.getOrganizationId(), LLM_Provider__c = 'claude', LLM_Model__c = 'claude-sonnet-5');
