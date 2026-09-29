@@ -1,0 +1,167 @@
+<template>
+    <div class="f360">
+        <template lwc:if={household}>
+            <div class="slds-card slds-p-around_medium hh-header">
+                <div class="slds-grid slds-grid_vertical-align-center slds-wrap">
+                    <template lwc:if={showBack}>
+                        <lightning-button-icon icon-name="utility:back" variant="border-filled" alternative-text="Back to search"
+                            onclick={handleBack} class="slds-m-right_small"></lightning-button-icon>
+                    </template>
+                    <div class="slds-col">
+                        <h2 class="slds-text-heading_medium hh-name" data-id={household.accountId} onclick={handleOpenRecord}>{household.name}</h2>
+                        <p class="slds-text-color_weak">{household.phone} · Customer since {household.customerSince}</p>
+                    </div>
+                    <div class="stats">
+                        <div class="stat"><span class="stat-num">{household.bookingCount}</span><span class="stat-label">bookings</span></div>
+                        <div class="stat"><span class="stat-num">{household.partiesHosted}</span><span class="stat-label">parties</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slds-grid slds-wrap slds-gutters_small slds-m-top_small">
+                <div class="slds-col slds-size_1-of-1 slds-large-size_7-of-12">
+                    <template for:each={sections} for:item="s">
+                        <div key={s.key} class="slds-card slds-m-bottom_small">
+                            <div class="slds-card__header"><h3 class="slds-text-title_caps">{s.label}</h3></div>
+                            <div class="slds-card__body slds-card__body_inner">
+                                <template lwc:if={s.hasRows}>
+                                    <ul class="rows">
+                                        <template for:each={s.rows} for:item="r">
+                                            <li key={r.id} class="row" data-id={r.id} onclick={handleOpenRecord}>
+                                                <div class="row-main">
+                                                    <span class="row-title">{r.title}</span>
+                                                    <template lwc:if={r.badge}><span class="slds-badge slds-m-left_x-small">{r.badge}</span></template>
+                                                    <template lwc:if={r.subtitle}><div class="row-sub">{r.subtitle}</div></template>
+                                                    <template lwc:if={r.body}><div class="row-body">{r.body}</div></template>
+                                                </div>
+                                                <template lwc:if={r.dateLabel}><span class="row-date">{r.dateLabel}</span></template>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </template>
+                                <template lwc:else><p class="slds-text-color_weak">{s.empty}</p></template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="slds-col slds-size_1-of-1 slds-large-size_5-of-12">
+                    <div class="slds-card slds-m-bottom_small ai-card">
+                        <div class="slds-card__header slds-grid slds-grid_vertical-align-center">
+                            <h3 class="slds-text-title_caps slds-col">AI insights</h3>
+                            <lightning-button label={insightsButtonLabel} icon-name="utility:sparkles" variant="brand"
+                                onclick={handleGetInsights} disabled={loadingInsights}></lightning-button>
+                        </div>
+                        <div class="slds-card__body slds-card__body_inner">
+                            <template lwc:if={loadingInsights}>
+                                <div class="spinner-holder"><lightning-spinner alternative-text="Thinking" size="small"></lightning-spinner></div>
+                            </template>
+                            <template lwc:elseif={insights}>
+                                <template lwc:if={insights.ok}>
+                                    <p class="summary">{insights.summary}</p>
+                                    <template lwc:if={hasInsightList}>
+                                        <ul class="insights">
+                                            <template for:each={insightList} for:item="i">
+                                                <li key={i.key}><strong>{i.title}</strong> — {i.detail}</li>
+                                            </template>
+                                        </ul>
+                                    </template>
+                                    <template lwc:if={hasInsightTasks}>
+                                        <h4 class="slds-text-title slds-m-top_small slds-m-bottom_x-small">Suggested tasks</h4>
+                                        <template for:each={insightTasks} for:item="t">
+                                            <div key={t.key} class="suggestion">
+                                                <div class="suggestion-text">
+                                                    <div class="row-title">{t.subject}</div>
+                                                    <div class="row-sub">{t.reason}</div>
+                                                    <div class="row-date">{t.dueLabel} · {t.relatedToken}</div>
+                                                </div>
+                                                <div class="suggestion-actions">
+                                                    <lightning-button label="Create task" variant="brand-outline" data-key={t.key} onclick={handleCreateTask}></lightning-button>
+                                                    <lightning-button-icon icon-name="utility:close" variant="bare" alternative-text="Dismiss"
+                                                        data-key={t.key} onclick={handleDismissTask}></lightning-button-icon>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </template>
+                                    <p class="slds-text-color_weak slds-text-body_small slds-m-top_small">
+                                        Model: {insights.model}. Names, contact details and health notes are masked before the AI sees them. Staff decide what becomes a task.
+                                    </p>
+                                </template>
+                                <template lwc:else>
+                                    <p class="slds-text-color_error">{insights.error}</p>
+                                </template>
+                            </template>
+                            <template lwc:else>
+                                <p class="slds-text-color_weak">Get a summary of this family and suggested next steps for staff.</p>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="slds-card slds-m-bottom_small">
+                        <div class="slds-card__header"><h3 class="slds-text-title_caps">Open tasks</h3></div>
+                        <div class="slds-card__body slds-card__body_inner">
+                            <template lwc:if={hasOpenTasks}>
+                                <ul class="rows">
+                                    <template for:each={household.openTasks} for:item="r">
+                                        <li key={r.id} class="row" data-id={r.id} onclick={handleOpenRecord}>
+                                            <div class="row-main">
+                                                <span class="row-title">{r.title}</span>
+                                                <template lwc:if={r.badge}><span class="slds-badge slds-badge_inverse slds-m-left_x-small">{r.badge}</span></template>
+                                                <template lwc:if={r.body}><div class="row-sub">{r.body}</div></template>
+                                            </div>
+                                            <template lwc:if={r.dateLabel}><span class="row-date">{r.dateLabel}</span></template>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </template>
+                            <template lwc:else><p class="slds-text-color_weak">Nothing open.</p></template>
+                        </div>
+                    </div>
+
+                    <div class="slds-card">
+                        <div class="slds-card__header"><h3 class="slds-text-title_caps">Add a staff note</h3></div>
+                        <div class="slds-card__body slds-card__body_inner">
+                            <lightning-textarea label="Note" variant="label-hidden" placeholder="What happened, what they asked for, what was promised…"
+                                value={noteText} onchange={handleNoteInput}></lightning-textarea>
+                            <div class="slds-grid slds-grid_vertical-align-end slds-m-top_x-small">
+                                <lightning-combobox class="slds-col slds-m-right_small" label="Team member" variant="label-hidden"
+                                    options={teamMemberOptions} value={noteTeamMember} onchange={handleTeamMember}></lightning-combobox>
+                                <lightning-button label="Save note" variant="brand" onclick={handleSaveNote} disabled={noteDisabled}></lightning-button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <template lwc:else>
+            <div class="slds-card slds-p-around_medium">
+                <h2 class="slds-text-heading_medium slds-m-bottom_x-small">Family 360</h2>
+                <p class="slds-text-color_weak slds-m-bottom_small">Search by phone, email or family name.</p>
+                <lightning-input type="search" label="Search" variant="label-hidden" placeholder="e.g. 604 555 0199 or jane@example.com"
+                    value={searchTerm} onchange={handleSearchInput} is-loading={searching}></lightning-input>
+
+                <template lwc:if={loadingHousehold}>
+                    <div class="spinner-holder"><lightning-spinner alternative-text="Loading" size="small"></lightning-spinner></div>
+                </template>
+
+                <template lwc:if={hasHits}>
+                    <ul class="rows slds-m-top_small">
+                        <template for:each={hits} for:item="h">
+                            <li key={h.accountId} class="row" data-id={h.accountId} onclick={handleSelectHit}>
+                                <div class="row-main">
+                                    <span class="row-title">{h.name}</span>
+                                    <div class="row-sub">{h.people}</div>
+                                </div>
+                                <span class="row-date">{h.phone}</span>
+                            </li>
+                        </template>
+                    </ul>
+                </template>
+                <template lwc:if={showNoResults}>
+                    <p class="slds-m-top_small slds-text-color_weak">No household found.</p>
+                </template>
+            </div>
+        </template>
+    </div>
+</template>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Account__c</fullName>
+    <label>Household</label>
+    <description></description>
+    <type>Lookup</type>
+    <referenceTo>Account</referenceTo>
+    <relationshipName>AI_Call_Logs</relationshipName>
+    <relationshipLabel>AI Call Logs</relationshipLabel>
+    <deleteConstraint>SetNull</deleteConstraint>
+</CustomField>

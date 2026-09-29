@@ -1,0 +1,127 @@
+.f360 {
+    max-width: 1280px;
+}
+
+.hh-name {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.hh-name:hover {
+    text-decoration: underline;
+}
+
+.stats {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-num {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--slds-g-color-neutral-base-50, #747474);
+}
+
+.rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--slds-g-color-border-base-1, #e5e5e5);
+    cursor: pointer;
+}
+
+.row:last-child {
+    border-bottom: none;
+}
+
+.row:hover .row-title {
+    text-decoration: underline;
+}
+
+.row-main {
+    min-width: 0;
+    flex: 1;
+}
+
+.row-title {
+    font-weight: 600;
+}
+
+.row-sub {
+    font-size: 0.8125rem;
+    color: var(--slds-g-color-neutral-base-50, #747474);
+}
+
+.row-body {
+    margin-top: 0.25rem;
+    white-space: pre-line;
+}
+
+.row-date {
+    font-size: 0.75rem;
+    white-space: nowrap;
+    color: var(--slds-g-color-neutral-base-50, #747474);
+}
+
+.ai-card {
+    border-top: 3px solid var(--slds-g-color-brand-base-50, #0176d3);
+}
+
+.summary {
+    font-size: 0.9375rem;
+    line-height: 1.4;
+}
+
+.insights {
+    margin: 0.5rem 0 0 1rem;
+    list-style: disc;
+}
+
+.insights li {
+    margin-bottom: 0.25rem;
+}
+
+.suggestion {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--slds-g-color-border-base-1, #e5e5e5);
+    border-radius: 0.25rem;
+}
+
+.suggestion-text {
+    min-width: 0;
+    flex: 1;
+}
+
+.suggestion-actions {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.25rem;
+}
+
+.spinner-holder {
+    position: relative;
+    min-height: 3rem;
+}
