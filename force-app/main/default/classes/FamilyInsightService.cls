@@ -34,6 +34,14 @@ public with sharing class FamilyInsightService {
     }
 
     public static InsightResult run(Id accountId) {
+        return run(accountId, null);
+    }
+
+    /**
+     * @param deferredLogs when not null, the log is added here instead of inserted, so callers can make
+     *                     several AI callouts first and insert all logs at the end (no DML before callouts).
+     */
+    public static InsightResult run(Id accountId, List<AI_Call_Log__c> deferredLogs) {
         InsightResult res = new InsightResult();
         LlmClient client = LlmClientFactory.get();
         res.model = client.modelName();
@@ -65,6 +73,10 @@ public with sharing class FamilyInsightService {
         log.Tasks_Suggested__c = res.suggestedTasks.size();
         if (!res.droppedReasons.isEmpty()) {
             log.Error__c = ('Dropped by guardrails:\n' + String.join(res.droppedReasons, '\n')).left(32768);
+        }
+        if (deferredLogs != null) {
+            deferredLogs.add(log);
+            return res;
         }
         insert as system log;
         res.logId = log.Id;

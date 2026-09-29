@@ -109,6 +109,15 @@ private class Family360ControllerTest {
     }
 
     @IsTest
+    static void deferredLogsAreNotInserted() {
+        List<AI_Call_Log__c> logs = new List<AI_Call_Log__c>();
+        FamilyInsightService.run(accountId(), logs);
+        System.assertEquals(1, logs.size());
+        System.assertEquals(null, logs[0].Id);
+        System.assertEquals(0, [SELECT COUNT() FROM AI_Call_Log__c]);
+    }
+
+    @IsTest
     static void emptyNoteIsRejected() {
         try {
             Family360Controller.addNote(accountId(), null, '  ', null);
