@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Heard_About_Us__c</fullName>
+    <description>How the family first heard about Fun Circle.</description>
+    <label>Heard About Us</label>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>Google</fullName><default>false</default><label>Google</label></value>
+            <value><fullName>Instagram or Facebook</fullName><default>false</default><label>Instagram or Facebook</label></value>
+            <value><fullName>Friend or family</fullName><default>false</default><label>Friend or family</label></value>
+            <value><fullName>School or daycare</fullName><default>false</default><label>School or daycare</label></value>
+            <value><fullName>Walked by</fullName><default>false</default><label>Walked by</label></value>
+            <value><fullName>Event or fair</fullName><default>false</default><label>Event or fair</label></value>
+            <value><fullName>Other</fullName><default>false</default><label>Other</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

@@ -166,6 +166,12 @@
     background: var(--f360-brand-soft);
 }
 
+@media (min-width: 1px) {
+    .panel-accent {
+        min-height: 20rem;
+    }
+}
+
 .panel-head h2 {
     font-size: 1rem;
     font-weight: 700;
@@ -487,3 +493,75 @@
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+.chars {
+    font-size: 0.6875rem;
+    color: var(--f360-quiet);
+    text-align: right;
+}
+
+.picks-label {
+    font-size: 0.75rem;
+    color: var(--f360-quiet);
+    margin: 0.5rem 0 0.375rem;
+}
+
+.picks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.pick {
+    font-size: 0.75rem;
+    text-align: left;
+    border: 1px solid var(--f360-line);
+    background: var(--f360-surface);
+    color: var(--f360-ink);
+    border-radius: 1rem;
+    padding: 0.25rem 0.625rem;
+    cursor: pointer;
+}
+
+.pick:hover {
+    border-color: var(--f360-brand);
+}
+
+.pick-on {
+    background: var(--f360-brand);
+    border-color: var(--f360-brand);
+    color: #fff;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.75rem 1rem;
+}
+
+.span-2 {
+    grid-column: 1 / -1;
+}
+
+.addons {
+    --slds-c-checkbox-spacing-block: 0;
+}
+
+.desk-tabs {
+    display: block;
+}
+
+/* US-016: guided conversation, profile, visit source */
+.stack-left { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+.stat-source { margin-top: 0.5rem; font-size: 0.75rem; color: var(--f360-quiet, #706e6b); }
+.hint { font-size: 0.8125rem; color: var(--f360-quiet, #706e6b); margin-bottom: 0.5rem; }
+.profile-status { margin-left: auto; margin-right: 0.5rem; font-size: 0.75rem; color: var(--f360-quiet, #706e6b); }
+.segments { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 0.5rem; }
+.profile-row { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.375rem 0; border-bottom: 1px solid var(--f360-line, #e5e5e5); }
+.profile-row .row-title { text-align: right; }
+.profile-form { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem; }
+.draft { margin-top: 1rem; padding: 0.75rem; border: 1px solid var(--f360-line, #e5e5e5); border-left: 4px solid #0176d3; border-radius: 0.5rem; background: #fafcff; }
+.draft-fields { margin: 0.5rem 0; }
+.draft-row { display: grid; grid-template-columns: 40% 60%; gap: 0.5rem; padding: 0.25rem 0; font-size: 0.8125rem; }
+.draft-row dt { color: var(--f360-quiet, #706e6b); }
+.fineprint.warn { color: #8c4b02; }

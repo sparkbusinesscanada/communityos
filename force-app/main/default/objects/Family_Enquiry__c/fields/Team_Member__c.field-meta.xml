@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Team_Member__c</fullName>
+    <description>Staff member who logged it.</description>
+    <label>Team Member</label>
+    <length>80</length>
+    <type>Text</type>
+</CustomField>

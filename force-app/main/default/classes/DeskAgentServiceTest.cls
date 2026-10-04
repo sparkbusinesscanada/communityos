@@ -84,7 +84,7 @@ private class DeskAgentServiceTest {
     static void contactDetailsBlockWholeResponse() {
         LlmClientFactory.overrideClient = new StubLlm(
             '{"answers":[{"key":"Last_Party","status":"answered","answer":"Call 604-555-0111","sources":["Booking 1"]}]}');
-        DeskAgentService.DeskResult r = Family360Controller.askDesk(accountId(), new List<String>{ 'Last_Party' });
+        DeskAgentService.DeskResult r = Family360Controller.askDesk(accountId(), new List<String>{ 'Last_Party' }, null, null);
         System.assert(!r.ok);
         System.assertEquals(0, [SELECT COUNT() FROM Desk_Question__c]);
     }

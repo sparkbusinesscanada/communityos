@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Enquiry_Type__c</fullName>
+    <description>Intent staff picked for the conversation.</description>
+    <label>What It Is About</label>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>New party</fullName><default>false</default><label>New party</label></value>
+            <value><fullName>Change a booking</fullName><default>false</default><label>Change a booking</label></value>
+            <value><fullName>Laser tag</fullName><default>false</default><label>Laser tag</label></value>
+            <value><fullName>Camp or class</fullName><default>false</default><label>Camp or class</label></value>
+            <value><fullName>Drop-in</fullName><default>false</default><label>Drop-in</label></value>
+            <value><fullName>Just a question</fullName><default>false</default><label>Just a question</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

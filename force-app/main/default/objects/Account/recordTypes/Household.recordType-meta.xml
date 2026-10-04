@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RecordType xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Household</fullName>
+    <active>true</active>
+    <description>A family unit: guardians (Contact) and children (Minor__c) share one Household Account.</description>
+    <label>Household</label>
+</RecordType>

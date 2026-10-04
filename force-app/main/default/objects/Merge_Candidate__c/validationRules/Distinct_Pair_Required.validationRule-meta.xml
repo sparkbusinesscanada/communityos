@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Distinct_Pair_Required</fullName>
+    <active>true</active>
+    <description>A merge candidate needs two different contacts.</description>
+    <errorConditionFormula>OR(ISBLANK(Contact_A__c), ISBLANK(Contact_B__c), Contact_A__c = Contact_B__c)</errorConditionFormula>
+    <errorDisplayField>Contact_B__c</errorDisplayField>
+    <errorMessage>Pick two different contacts.</errorMessage>
+</ValidationRule>

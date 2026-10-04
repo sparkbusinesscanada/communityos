@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Laser_Tag_Package__c</fullName>
+    <description>1 Game or 2 Game.</description>
+    <label>Laser Tag Package</label>
+    <length>40</length>
+    <type>Text</type>
+</CustomField>

@@ -3,3 +3,8 @@
 !.env.example
 node_modules/
 .DS_Store
+.sf/
+.sfdx/
+*.key
+*.pem
+*.crt

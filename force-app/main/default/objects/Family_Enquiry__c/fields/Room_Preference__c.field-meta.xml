@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Room_Preference__c</fullName>
+    <description>Activity room value as on Booking.</description>
+    <label>Room Preference</label>
+    <length>80</length>
+    <type>Text</type>
+</CustomField>

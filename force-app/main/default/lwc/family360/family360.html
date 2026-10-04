@@ -31,9 +31,55 @@
                         </div>
                     </template>
                 </div>
+                <template lwc:if={visitSource}><p class="stat-source">{visitSource}</p></template>
             </section>
 
             <div class="grid">
+                <div class="stack-left">
+                <section class="panel">
+                    <header class="panel-head">
+                        <h2>Family profile</h2>
+                        <span class="profile-status">{profileStatus}</span>
+                        <lightning-button variant="base" label={profileEditLabel} onclick={handleToggleProfileEdit}></lightning-button>
+                    </header>
+                    <div class="panel-body">
+                        <div class="segments">
+                            <template for:each={segments} for:item="s">
+                                <span key={s} class="badge badge-ai">{s}</span>
+                            </template>
+                        </div>
+                        <template for:each={answeredProfile} for:item="q">
+                            <div key={q.key} class="profile-row"><span class="row-sub">{q.label}</span><span class="row-title">{q.value}</span></div>
+                        </template>
+                        <template lwc:if={hasOpenProfileQuestions}>
+                            <div class="profile-form">
+                                <template for:each={openProfileQuestions} for:item="q">
+                                    <div key={q.key} class="profile-q">
+                                        <template lwc:if={q.isButtons}>
+                                            <lightning-radio-group type="button" label={q.label} options={q.options} value={q.draftValue}
+                                                data-key={q.key} onchange={handleProfileField}></lightning-radio-group>
+                                        </template>
+                                        <template lwc:elseif={q.isMulti}>
+                                            <lightning-checkbox-group class="addons" label={q.label} options={q.options} value={q.draftValue}
+                                                data-key={q.key} onchange={handleProfileField}></lightning-checkbox-group>
+                                        </template>
+                                        <template lwc:elseif={q.isCombo}>
+                                            <lightning-combobox label={q.label} options={q.options} value={q.draftValue} placeholder="Choose one"
+                                                data-key={q.key} onchange={handleProfileField}></lightning-combobox>
+                                        </template>
+                                        <template lwc:else>
+                                            <lightning-input label={q.label} max-length="120" value={q.draftValue}
+                                                data-key={q.key} onchange={handleProfileField}></lightning-input>
+                                        </template>
+                                    </div>
+                                </template>
+                                <div class="ask-bar">
+                                    <lightning-button variant="brand" label="Save profile" onclick={handleSaveProfile} disabled={savingProfile}></lightning-button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </section>
                 <section class="panel">
                     <header class="panel-head"><h2>History</h2></header>
                     <lightning-tabset variant="scoped">
@@ -60,74 +106,211 @@
                     </lightning-tabset>
                 </section>
 
+                </div>
+
                 <section class="panel panel-accent">
-                    <header class="panel-head">
-                        <h2>Ask about this family</h2>
-                        <div class="head-actions">
-                            <lightning-button variant="base" label="All" onclick={handleSelectAll}></lightning-button>
-                            <lightning-button variant="base" label="Clear" onclick={handleClearQuestions} class="slds-m-left_x-small"></lightning-button>
-                        </div>
-                    </header>
-                    <div class="panel-body">
-                        <lightning-checkbox-group name="deskQuestions" label="Questions" variant="label-hidden"
-                            options={questionOptions} value={selectedKeys} onchange={handleQuestionChange}></lightning-checkbox-group>
-                        <div class="ask-bar">
-                            <lightning-button variant="brand" icon-name="utility:sparkles" label={askLabel}
-                                onclick={handleAsk} disabled={askDisabled}></lightning-button>
-                            <span class="hint">Answers cite the booking, order or note they came from and are saved to the family.</span>
-                        </div>
-                        <template lwc:if={asking}>
-                            <div class="spinner-holder"><lightning-spinner alternative-text="Looking it up" size="small"></lightning-spinner></div>
-                        </template>
-                        <template lwc:if={deskError}><p class="error">{deskError}</p></template>
-                        <template lwc:if={hasAnswers}>
-                            <div class="answers">
-                                <template for:each={answerCards} for:item="a">
-                                    <article key={a.key} class="answer">
-                                        <div class="answer-head">
-                                            <span class="answer-q">{a.question}</span>
-                                            <span class={a.badgeClass}>{a.badgeText}</span>
-                                        </div>
-                                        <p class="answer-text">{a.answer}</p>
-                                        <div class="answer-foot">
-                                            <template lwc:if={a.hasLinks}>
-                                                <div class="sources">
-                                                    <template for:each={a.sourceLinks} for:item="s">
-                                                        <button key={s.label} class="source" data-id={s.recordId} onclick={handleOpenRecord}>{s.label}</button>
+                    <lightning-tabset variant="scoped" class="desk-tabs">
+                        <lightning-tab label="Ask about this family" icon-name="utility:sparkles">
+                            <div class="panel-body">
+                                <lightning-combobox label="About" options={aboutOptions} value={focusRecordId}
+                                    onchange={handleFocusRecord}></lightning-combobox>
+                                <lightning-textarea class="slds-m-top_small" label="Your question" max-length="300"
+                                    placeholder="e.g. Did they pay the deposit for the November party?"
+                                    value={customQuestion} onchange={handleCustomQuestion}
+                                    field-level-help="Ask in your own words. The answer cites the booking, order or note it used."></lightning-textarea>
+                                <div class="chars">{charsLeft}</div>
+                                <div class="picks-label">Quick questions (tap to add)</div>
+                                <div class="picks">
+                                    <template for:each={quickPicks} for:item="q">
+                                        <button key={q.key} class={q.cls} aria-pressed={q.pressed} data-key={q.key}
+                                            onclick={handleTogglePick}>{q.question}</button>
+                                    </template>
+                                </div>
+                                <div class="ask-bar">
+                                    <lightning-button variant="brand" icon-name="utility:sparkles" label={askLabel}
+                                        onclick={handleAsk} disabled={askDisabled}></lightning-button>
+                                    <lightning-button variant="base" label="Clear" onclick={handleClearQuestions}></lightning-button>
+                                </div>
+                                <template lwc:if={asking}>
+                                    <div class="spinner-holder"><lightning-spinner alternative-text="Looking it up" size="small"></lightning-spinner></div>
+                                </template>
+                                <template lwc:if={deskError}><p class="error">{deskError}</p></template>
+                                <template lwc:if={hasAnswers}>
+                                    <div class="answers">
+                                        <template for:each={answerCards} for:item="a">
+                                            <article key={a.key} class="answer">
+                                                <div class="answer-head">
+                                                    <span class="answer-q">{a.question}</span>
+                                                    <span class={a.badgeClass}>{a.badgeText}</span>
+                                                </div>
+                                                <p class="answer-text">{a.answer}</p>
+                                                <div class="answer-foot">
+                                                    <template lwc:if={a.hasLinks}>
+                                                        <div class="sources">
+                                                            <template for:each={a.sourceLinks} for:item="s">
+                                                                <button key={s.label} class="source" data-id={s.recordId} onclick={handleOpenRecord}>{s.label}</button>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+                                                    <template lwc:if={a.canMark}>
+                                                        <div class="outcome">
+                                                            <lightning-button label="Resolved" icon-name="utility:check" variant="neutral"
+                                                                data-id={a.deskQuestionId} data-outcome="resolved" onclick={handleOutcome}></lightning-button>
+                                                            <lightning-button label="Escalate" icon-name="utility:level_up" variant="neutral" class="slds-m-left_x-small"
+                                                                data-id={a.deskQuestionId} data-outcome="escalated" onclick={handleOutcome}></lightning-button>
+                                                        </div>
                                                     </template>
                                                 </div>
-                                            </template>
-                                            <template lwc:if={a.canMark}>
-                                                <div class="outcome">
-                                                    <lightning-button label="Resolved" icon-name="utility:check" variant="neutral"
-                                                        data-id={a.deskQuestionId} data-outcome="resolved" onclick={handleOutcome}></lightning-button>
-                                                    <lightning-button label="Escalate" icon-name="utility:level_up" variant="neutral" class="slds-m-left_x-small"
-                                                        data-id={a.deskQuestionId} data-outcome="escalated" onclick={handleOutcome}></lightning-button>
+                                            </article>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template lwc:if={hasDeskHistory}>
+                                    <h3 class="sub-head">Recent questions</h3>
+                                    <ul class="rows">
+                                        <template for:each={deskHistory} for:item="r">
+                                            <li key={r.id} class="row" data-id={r.id} onclick={handleOpenRecord}>
+                                                <div class="row-main">
+                                                    <span class="row-title">{r.title}</span>
+                                                    <template lwc:if={r.body}><div class="row-sub clamp">{r.body}</div></template>
                                                 </div>
+                                                <div class="row-side">
+                                                    <span class={r.badgeClass}>{r.badge}</span>
+                                                    <span class="row-date">{r.dateLabel}</span>
+                                                </div>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </template>
+                            </div>
+                        </lightning-tab>
+
+                        <lightning-tab label="New conversation" icon-name="utility:chat">
+                            <div class="panel-body enquiry-form">
+                                <p class="hint">Past visits and bookings are already above. Only ask what we don't know yet.</p>
+                                <lightning-radio-group label="What is this about?" type="button" required
+                                    options={enquiryOptions.intents} value={enquiry.enquiryType}
+                                    data-field="enquiryType" onchange={handleEnquiryField}></lightning-radio-group>
+                                <template lwc:if={hasIntent}>
+                                    <div class="form-grid slds-m-top_small">
+                                        <lightning-radio-group class="span-2" label="How did they reach us?" type="button"
+                                            options={enquiryOptions.channels} value={enquiry.channel}
+                                            data-field="channel" onchange={handleEnquiryField}></lightning-radio-group>
+
+                                        <template lwc:if={isChange}>
+                                            <lightning-combobox class="span-2" label="Which booking?" required options={bookingPickOptions}
+                                                value={enquiry.bookingId} data-field="bookingId" onchange={handleEnquiryField}></lightning-combobox>
+                                            <lightning-checkbox-group class="span-2 addons" label="What do they want to change?" required
+                                                options={enquiryOptions.changes} value={enquiry.changes}
+                                                data-field="changes" onchange={handleEnquiryField}></lightning-checkbox-group>
+                                        </template>
+
+                                        <template lwc:if={showDate}>
+                                            <lightning-input type="date" label={dateLabel} required={dateRequired} min={todayIso}
+                                                message-when-range-underflow="Pick today or a future date."
+                                                value={enquiry.preferredDate} data-field="preferredDate" onchange={handleEnquiryField}></lightning-input>
+                                        </template>
+                                        <template lwc:if={isNewParty}>
+                                            <lightning-input type="date" label="Backup date" min={todayIso}
+                                                value={enquiry.backupDate} data-field="backupDate" onchange={handleEnquiryField}></lightning-input>
+                                            <lightning-combobox label="Time slot" options={timeOptions}
+                                                value={enquiry.preferredTime} data-field="preferredTime" onchange={handleEnquiryField}></lightning-combobox>
+                                        </template>
+
+                                        <template lwc:if={showHeadcount}>
+                                            <lightning-input type="number" label="Kids" min="0" max="500" step="1"
+                                                value={enquiry.kids} data-field="kids" onchange={handleEnquiryField}></lightning-input>
+                                            <lightning-input type="number" label="Adults" min="0" max="500" step="1"
+                                                value={enquiry.adults} data-field="adults" onchange={handleEnquiryField}></lightning-input>
+                                        </template>
+
+                                        <template lwc:if={showRoomPackage}>
+                                            <lightning-combobox label="Package" options={packageOptions}
+                                                value={enquiry.packageInterest} data-field="packageInterest" onchange={handleEnquiryField}></lightning-combobox>
+                                            <lightning-combobox label="Room" options={roomOptions}
+                                                value={enquiry.roomPreference} data-field="roomPreference" onchange={handleEnquiryField}></lightning-combobox>
+                                        </template>
+                                        <template lwc:if={changeRoom}>
+                                            <lightning-combobox label="New room" options={roomOptions}
+                                                value={enquiry.roomPreference} data-field="roomPreference" onchange={handleEnquiryField}></lightning-combobox>
+                                        </template>
+                                        <template lwc:if={changePackage}>
+                                            <lightning-combobox label="New package" options={packageOptions}
+                                                value={enquiry.packageInterest} data-field="packageInterest" onchange={handleEnquiryField}></lightning-combobox>
+                                        </template>
+                                        <template lwc:if={changeCancel}>
+                                            <lightning-combobox class="span-2" label="Why are they cancelling?" required options={cancelOptions}
+                                                value={enquiry.cancelReason} data-field="cancelReason" onchange={handleEnquiryField}></lightning-combobox>
+                                        </template>
+
+                                        <template lwc:if={isNewParty}>
+                                            <lightning-input type="number" label="Pizzas" min="0" max="100" step="1"
+                                                value={enquiry.pizzas} data-field="pizzas" onchange={handleEnquiryField}></lightning-input>
+                                            <lightning-input type="toggle" label="Deposit policy explained" message-toggle-active="Yes" message-toggle-inactive="No"
+                                                checked={enquiry.depositDiscussed} data-field="depositDiscussed" onchange={handleEnquiryField}></lightning-input>
+                                        </template>
+                                        <template lwc:if={showAddOns}>
+                                            <lightning-checkbox-group class="span-2 addons" label="Add-ons"
+                                                options={enquiryOptions.addOns} value={enquiry.addOns}
+                                                data-field="addOns" onchange={handleEnquiryField}></lightning-checkbox-group>
+                                        </template>
+
+                                        <template lwc:if={isLaser}>
+                                            <lightning-input type="number" label="Players" min="1" max="60" step="1"
+                                                value={enquiry.players} data-field="players" onchange={handleEnquiryField}></lightning-input>
+                                            <lightning-combobox label="Laser tag package" options={laserOptions}
+                                                value={enquiry.laserPackage} data-field="laserPackage" onchange={handleEnquiryField}></lightning-combobox>
+                                        </template>
+
+                                        <lightning-textarea class="span-2" label="Anything else they said" max-length="2000"
+                                            value={enquiry.notes} data-field="notes" onchange={handleEnquiryField}></lightning-textarea>
+                                        <lightning-input type="toggle" label="Allergy or medical flag" message-toggle-active="Yes" message-toggle-inactive="No"
+                                            field-level-help="Staff only. Never sent to the AI."
+                                            checked={enquiry.allergyFlagged} data-field="allergyFlagged" onchange={handleEnquiryField}></lightning-input>
+                                        <lightning-input type="date" label="Follow up by" min={todayIso}
+                                            field-level-help="Creates a task for you on this date."
+                                            message-when-range-underflow="Pick today or a future date."
+                                            value={enquiry.followUpDate} data-field="followUpDate" onchange={handleEnquiryField}></lightning-input>
+                                    </div>
+                                    <div class="ask-bar">
+                                        <lightning-button variant="brand" icon-name="utility:save" label={saveEnquiryLabel}
+                                            onclick={handleSaveEnquiry} disabled={saveEnquiryDisabled}></lightning-button>
+                                        <lightning-button variant="base" label="Reset" onclick={handleResetEnquiry}></lightning-button>
+                                    </div>
+                                </template>
+
+                                <template lwc:if={draft}>
+                                    <article class="draft">
+                                        <div class="answer-head">
+                                            <span class="answer-q">{draft.target}</span>
+                                            <span class={draftStatusClass}>{draft.status}</span>
+                                        </div>
+                                        <template lwc:if={draft.fields}>
+                                            <dl class="draft-fields">
+                                                <template for:each={draft.fields} for:item="f">
+                                                    <div key={f.label} class="draft-row"><dt>{f.label}</dt><dd>{f.value}</dd></div>
+                                                </template>
+                                            </dl>
+                                        </template>
+                                        <template lwc:if={draft.blockedReason}><p class="fineprint warn">{draft.blockedReason}</p></template>
+                                        <div class="ask-bar">
+                                            <template lwc:if={draftHasAction}>
+                                                <lightning-button variant="brand" icon-name="utility:check" label={draft.actionLabel}
+                                                    onclick={handleApplyDraft} disabled={draftApplyDisabled}></lightning-button>
+                                            </template>
+                                            <template lwc:if={draftIsOpen}>
+                                                <lightning-button variant="base" label="Discard" onclick={handleDiscardDraft}></lightning-button>
+                                            </template>
+                                            <template lwc:if={draft.appliedRecordId}>
+                                                <lightning-button variant="neutral" icon-name="utility:new_window" label="Open record"
+                                                    onclick={handleOpenApplied}></lightning-button>
                                             </template>
                                         </div>
                                     </article>
                                 </template>
                             </div>
-                        </template>
-                        <template lwc:if={hasDeskHistory}>
-                            <h3 class="sub-head">Recent questions</h3>
-                            <ul class="rows">
-                                <template for:each={deskHistory} for:item="r">
-                                    <li key={r.id} class="row" data-id={r.id} onclick={handleOpenRecord}>
-                                        <div class="row-main">
-                                            <span class="row-title">{r.title}</span>
-                                            <template lwc:if={r.body}><div class="row-sub clamp">{r.body}</div></template>
-                                        </div>
-                                        <div class="row-side">
-                                            <span class={r.badgeClass}>{r.badge}</span>
-                                            <span class="row-date">{r.dateLabel}</span>
-                                        </div>
-                                    </li>
-                                </template>
-                            </ul>
-                        </template>
-                    </div>
+                        </lightning-tab>
+                    </lightning-tabset>
                 </section>
 
                 <div class="stack">

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Applied_To__c</fullName>
+    <description>Lead, Booking or Order the draft was applied to.</description>
+    <label>Applied To</label>
+    <length>40</length>
+    <type>Text</type>
+</CustomField>

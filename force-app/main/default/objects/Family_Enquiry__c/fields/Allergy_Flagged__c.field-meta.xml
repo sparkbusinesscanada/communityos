@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Allergy_Flagged__c</fullName>
+    <description>Staff-only flag. Never sent to the AI.</description>
+    <label>Allergy or Medical Flag</label>
+    <defaultValue>false</defaultValue>
+    <type>Checkbox</type>
+</CustomField>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Source_Refs_Required</fullName>
+    <active>true</active>
+    <description>Every non-native enquiry carries a source URL; Gmail enquiries carry the message id.</description>
+    <errorConditionFormula>OR(
+    AND(NOT(ISPICKVAL(Source_System__c, "Salesforce")), ISBLANK(Source_URL__c)),
+    AND(ISPICKVAL(Source_System__c, "Gmail"), ISBLANK(Gmail_Message_Id__c))
+)</errorConditionFormula>
+    <errorDisplayField>Source_URL__c</errorDisplayField>
+    <errorMessage>Source URL is required unless Source System is Salesforce, and Gmail enquiries need the Gmail Message Id.</errorMessage>
+</ValidationRule>

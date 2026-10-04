@@ -69,7 +69,17 @@ public with sharing class DeskAgentService {
         return out;
     }
 
+    public static final String CUSTOM_KEY = 'Custom';
+
     public static DeskResult ask(Id accountId, List<String> keys) {
+        return ask(accountId, keys, null, null);
+    }
+
+    /**
+     * @param customQuestion optional free-text question typed by staff (max 300 chars)
+     * @param focusRecordId  optional booking / order the question is about
+     */
+    public static DeskResult ask(Id accountId, List<String> keys, String customQuestion, Id focusRecordId) {
         DeskResult res = new DeskResult();
         Map<String, Question> byKey = new Map<String, Question>();
         for (Question q : templates()) { byKey.put(q.key, q); }
@@ -77,8 +87,15 @@ public with sharing class DeskAgentService {
         for (String k : keys == null ? new List<String>() : keys) {
             if (byKey.containsKey(k)) { asked.add(byKey.get(k)); }
         }
+        if (String.isNotBlank(customQuestion)) {
+            Question custom = new Question();
+            custom.key = CUSTOM_KEY;
+            custom.question = customQuestion.trim().left(300);
+            custom.offering = 'Other';
+            asked.add(custom);
+        }
         if (asked.isEmpty()) {
-            res.error = 'Tick at least one question.';
+            res.error = 'Type a question or pick a quick question.';
             return res;
         }
 
@@ -87,10 +104,18 @@ public with sharing class DeskAgentService {
         FamilyContextBuilder.Result ctx = FamilyContextBuilder.build(accountId);
         List<Object> qs = new List<Object>();
         for (Question q : asked) { qs.add(new Map<String, Object>{ 'key' => q.key, 'question' => q.question }); }
-        String payload = JSON.serialize(new Map<String, Object>{
+        String focusToken = null;
+        for (String t : ctx.tokenToRecordId.keySet()) {
+            if (focusRecordId != null && ctx.tokenToRecordId.get(t) == focusRecordId) { focusToken = t; }
+        }
+        Map<String, Object> body = new Map<String, Object>{
             'questions' => qs,
             'household' => JSON.deserializeUntyped(ctx.contextJson)
-        });
+        };
+        if (focusToken != null) {
+            body.put('focus', 'The questions are about ' + focusToken + ' unless they say otherwise.');
+        }
+        String payload = JSON.serialize(body);
 
         AI_Call_Log__c log = new AI_Call_Log__c(
             Account__c = accountId,

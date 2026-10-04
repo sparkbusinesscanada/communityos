@@ -45,6 +45,10 @@ public with sharing class Family360Controller {
         @AuraEnabled public List<Row> openTasks = new List<Row>();
         @AuraEnabled public List<String> teamMembers = new List<String>();
         @AuraEnabled public List<Row> deskHistory = new List<Row>();
+        @AuraEnabled public List<Row> enquiries = new List<Row>();
+        @AuraEnabled public ProfileService.Profile profile;
+        @AuraEnabled public List<EnquiryService.Option> recordOptions = new List<EnquiryService.Option>();
+        @AuraEnabled public List<EnquiryService.Option> bookingOptions = new List<EnquiryService.Option>();
         @AuraEnabled public Decimal lifetimeSpend = 0;
         @AuraEnabled public Integer unpaidOrders = 0;
         @AuraEnabled public String nextEvent;
@@ -94,9 +98,14 @@ public with sharing class Family360Controller {
     public static Household getHousehold(Id accountId) {
         Household h = new Household();
         Account a = [
-            SELECT Id, Name, Phone, CreatedDate, Number_of_Bookings__c, of_Parties_Hosted__c
+            SELECT Id, Name, Phone, CreatedDate, Number_of_Bookings__c, of_Parties_Hosted__c,
+                   Visit_Frequency__c, Heard_About_Us__c, Interests__c, Preferred_Contact__c, School_Daycare__c,
+                   Segment__c, Profile_Updated__c
             FROM Account WHERE Id = :accountId WITH USER_MODE
         ];
+        ProfileService.Signals sig = new ProfileService.Signals();
+        sig.partiesHosted = a.of_Parties_Hosted__c == null ? 0 : a.of_Parties_Hosted__c.intValue();
+        sig.customerSince = a.CreatedDate.date();
         h.accountId = a.Id;
         h.name = a.Name;
         h.phone = a.Phone;
@@ -121,6 +130,14 @@ public with sharing class Family360Controller {
             ORDER BY Event_Date_and_Start_Time__c DESC NULLS LAST LIMIT :ROWS
         ]) {
             bookingIds.add(o.Id);
+            sig.bookings++;
+            if (o.Event_Date_and_Start_Time__c != null && o.Event_Date_and_Start_Time__c.date() <= Date.today()
+                && (sig.lastActivity == null || o.Event_Date_and_Start_Time__c.date() > sig.lastActivity)) {
+                sig.lastActivity = o.Event_Date_and_Start_Time__c.date();
+            }
+            String optLabel = o.Name + (o.Event_Date_and_Start_Time__c == null ? '' : ' (' + o.Event_Date_and_Start_Time__c.format('d MMM yyyy') + ')');
+            h.recordOptions.add(new EnquiryService.Option('Booking: ' + optLabel, o.Id));
+            h.bookingOptions.add(new EnquiryService.Option(optLabel, o.Id));
             if (o.Event_Date_and_Start_Time__c != null) {
                 String label = o.Event_Date_and_Start_Time__c.format('d MMM yyyy');
                 if (o.Event_Date_and_Start_Time__c >= Datetime.now()) { h.nextEvent = label; }
@@ -138,7 +155,10 @@ public with sharing class Family360Controller {
             FROM Order WHERE AccountId = :accountId WITH USER_MODE ORDER BY EffectiveDate DESC LIMIT :ROWS
         ]) {
             orderIds.add(o.Id);
+            h.recordOptions.add(new EnquiryService.Option('Order ' + o.OrderNumber + (o.Invoice_Status__c == null ? '' : ' · ' + o.Invoice_Status__c), o.Id));
             if (o.Invoice_Status__c == 'PAID' && o.Total_Amount_with_Taxes__c != null) { h.lifetimeSpend += o.Total_Amount_with_Taxes__c; }
+            if (o.Laser_Tag_Package__c != null) { sig.laserOrders++; }
+            if (o.EffectiveDate != null && o.EffectiveDate <= Date.today() && (sig.lastActivity == null || o.EffectiveDate > sig.lastActivity)) { sig.lastActivity = o.EffectiveDate; }
             if (o.Invoice_Status__c != null && o.Invoice_Status__c != 'PAID' && o.Status != 'Draft') { h.unpaidOrders++; }
             h.orders.add(new Row(o.Id, 'Order ' + o.OrderNumber,
                 joinNonBlank(new List<String>{ o.Total_Amount_with_Taxes__c == null ? null : '$' + o.Total_Amount_with_Taxes__c.setScale(2), o.Laser_Tag_Package__c }, ' · '),
@@ -189,6 +209,23 @@ public with sharing class Family360Controller {
             h.openTasks.add(r);
         }
 
+        for (Family_Enquiry__c fe : [
+            SELECT Id, Enquiry_Type__c, Channel__c, Preferred_Date__c, Kids__c, Add_Ons__c, Changes__c, Notes__c,
+                   CreatedDate, Draft_Status__c, Applied_To__c
+            FROM Family_Enquiry__c WHERE Account__c = :accountId WITH USER_MODE ORDER BY CreatedDate DESC LIMIT :ROWS
+        ]) {
+            List<String> bits = new List<String>();
+            if (fe.Channel__c != null) { bits.add(fe.Channel__c); }
+            if (fe.Preferred_Date__c != null) { bits.add('for ' + Datetime.newInstance(fe.Preferred_Date__c, Time.newInstance(12, 0, 0, 0)).format('d MMM yyyy')); }
+            if (fe.Kids__c != null) { bits.add(fe.Kids__c.intValue() + ' kids'); }
+            if (fe.Changes__c != null) { bits.add('change: ' + fe.Changes__c.replace(';', ', ')); }
+            if (fe.Add_Ons__c != null) { bits.add(fe.Add_Ons__c.replace(';', ', ')); }
+            String status = fe.Draft_Status__c == 'Applied' && fe.Applied_To__c != null ? 'Applied to ' + fe.Applied_To__c : fe.Draft_Status__c;
+            Row r = new Row(fe.Id, fe.Enquiry_Type__c, String.join(bits, ' · '), fe.CreatedDate.format('d MMM yyyy'), status);
+            r.body = fe.Notes__c;
+            h.enquiries.add(r);
+        }
+
         for (Desk_Question__c dq : [
             SELECT Id, Question__c, Answer__c, Answer_Status__c, Source_Records__c, Asked_At__c,
                    Resolved_On_Spot__c, Escalated_To_Owner__c
@@ -202,6 +239,9 @@ public with sharing class Family360Controller {
             h.deskHistory.add(r);
         }
 
+        sig.camps = h.camps.size();
+        h.profile = ProfileService.read(a, sig);
+
         for (Schema.PicklistEntry e : Team_notes__c.Team_Member__c.getDescribe().getPicklistValues()) {
             if (e.isActive()) { h.teamMembers.add(e.getValue()); }
         }
@@ -213,10 +253,71 @@ public with sharing class Family360Controller {
         return DeskAgentService.templates();
     }
 
+    @AuraEnabled(cacheable=true)
+    public static EnquiryService.Options getEnquiryOptions() {
+        return EnquiryService.options();
+    }
+
     @AuraEnabled
-    public static DeskAgentService.DeskResult askDesk(Id accountId, List<String> keys) {
+    public static EnquiryService.Draft saveEnquiry(Id accountId, String inputJson) {
         try {
-            return DeskAgentService.ask(accountId, keys);
+            EnquiryService.EnquiryInput input = String.isBlank(inputJson)
+                ? null
+                : (EnquiryService.EnquiryInput) JSON.deserialize(inputJson, EnquiryService.EnquiryInput.class);
+            return EnquiryService.save(accountId, input);
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    @AuraEnabled
+    public static EnquiryService.Draft applyEnquiry(Id enquiryId) {
+        try {
+            return EnquiryService.apply(enquiryId);
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    @AuraEnabled
+    public static void discardEnquiry(Id enquiryId) {
+        try {
+            EnquiryService.discard(enquiryId);
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    @AuraEnabled
+    public static void saveProfile(Id accountId, String profileJson) {
+        try {
+            ProfileService.ProfileInput input = String.isBlank(profileJson)
+                ? null
+                : (ProfileService.ProfileInput) JSON.deserialize(profileJson, ProfileService.ProfileInput.class);
+            Household h = getHousehold(accountId);
+            ProfileService.Signals sig = new ProfileService.Signals();
+            sig.partiesHosted = h.partiesHosted == null ? 0 : h.partiesHosted.intValue();
+            sig.bookings = h.bookings.size();
+            sig.camps = h.camps.size();
+            ProfileService.save(accountId, input, sig);
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    @AuraEnabled
+    public static VisitSummaryService.Summary getVisitSummary(Id accountId) {
+        try {
+            return VisitSummaryService.get(accountId);
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    @AuraEnabled
+    public static DeskAgentService.DeskResult askDesk(Id accountId, List<String> keys, String customQuestion, Id focusRecordId) {
+        try {
+            return DeskAgentService.ask(accountId, keys, customQuestion, focusRecordId);
         } catch (Exception e) {
             throw new AuraHandledException(e.getMessage());
         }

@@ -24,7 +24,8 @@ public with sharing class FamilyContextBuilder {
         ctx.put('today', String.valueOf(today));
 
         Account acc = [
-            SELECT Id, CreatedDate, Number_of_Bookings__c, of_Parties_Hosted__c, Group_Type__c, Is_DayCare__c
+            SELECT Id, CreatedDate, Number_of_Bookings__c, of_Parties_Hosted__c, Group_Type__c, Is_DayCare__c,
+                   Visit_Frequency__c, Heard_About_Us__c, Interests__c, Preferred_Contact__c, Segment__c
             FROM Account WHERE Id = :accountId WITH USER_MODE
         ];
         r.tokenToRecordId.put('Household', acc.Id);
@@ -33,11 +34,17 @@ public with sharing class FamilyContextBuilder {
             'bookingCount' => acc.Number_of_Bookings__c,
             'partiesHosted' => acc.of_Parties_Hosted__c,
             'groupType' => acc.Group_Type__c,
-            'isDayCare' => acc.Is_DayCare__c
+            'isDayCare' => acc.Is_DayCare__c,
+            'visitFrequency' => acc.Visit_Frequency__c,
+            'heardAboutUs' => acc.Heard_About_Us__c,
+            'interests' => acc.Interests__c,
+            'preferredContact' => acc.Preferred_Contact__c,
+            'segment' => acc.Segment__c
         });
         r.fieldsSent.addAll(new List<String>{
             'Account.CreatedDate', 'Account.Number_of_Bookings__c', 'Account.of_Parties_Hosted__c',
-            'Account.Group_Type__c', 'Account.Is_DayCare__c'
+            'Account.Group_Type__c', 'Account.Is_DayCare__c', 'Account.Visit_Frequency__c', 'Account.Heard_About_Us__c',
+            'Account.Interests__c', 'Account.Preferred_Contact__c', 'Account.Segment__c'
         });
 
         Set<String> knownNames = collectKnownNames(accountId);
@@ -234,6 +241,46 @@ public with sharing class FamilyContextBuilder {
         ctx.put('openEnquiries', enquiryRows);
         r.fieldsSent.addAll(new List<String>{
             'Lead.Status', 'Lead.Party_Type__c', 'Lead.Booking_Type__c', 'Lead.Preferred_Date__c', 'Lead.Number_of_Kids__c'
+        });
+
+        List<Object> captured = new List<Object>();
+        for (Family_Enquiry__c fe : [
+            SELECT Id, CreatedDate, Enquiry_Type__c, Channel__c, Preferred_Date__c, Kids__c, Adults__c,
+                   Package_Interest__c, Room_Preference__c, Add_Ons__c, Deposit_Discussed__c, Notes__c,
+                   Follow_Up_Date__c, Booking__c, Changes__c, Draft_Status__c, Players__c, Pizza_Count__c
+            FROM Family_Enquiry__c WHERE Account__c = :accountId WITH USER_MODE
+            ORDER BY CreatedDate DESC LIMIT :MAX_ROWS
+        ]) {
+            String token = 'Enquiry ' + (captured.size() + 1);
+            r.tokenToRecordId.put(token, fe.Id);
+            String bookingToken = null;
+            for (String t : r.tokenToRecordId.keySet()) {
+                if (fe.Booking__c != null && r.tokenToRecordId.get(t) == fe.Booking__c) { bookingToken = t; }
+            }
+            captured.add(new Map<String, Object>{
+                'token' => token,
+                'logged' => String.valueOf(fe.CreatedDate.date()),
+                'type' => fe.Enquiry_Type__c,
+                'channel' => fe.Channel__c,
+                'preferredDate' => fe.Preferred_Date__c == null ? null : String.valueOf(fe.Preferred_Date__c),
+                'kids' => fe.Kids__c,
+                'adults' => fe.Adults__c,
+                'package' => fe.Package_Interest__c,
+                'room' => fe.Room_Preference__c,
+                'addOns' => fe.Add_Ons__c,
+                'depositDiscussed' => fe.Deposit_Discussed__c,
+                'notes' => Redactor.redact(fe.Notes__c, knownNames),
+                'followUpDate' => fe.Follow_Up_Date__c == null ? null : String.valueOf(fe.Follow_Up_Date__c),
+                'aboutBooking' => bookingToken,
+                'changes' => fe.Changes__c,
+                'status' => fe.Draft_Status__c,
+                'players' => fe.Players__c,
+                'pizzas' => fe.Pizza_Count__c
+            });
+        }
+        ctx.put('deskEnquiries', captured);
+        r.fieldsSent.addAll(new List<String>{
+            'Family_Enquiry__c (all fields except Allergy_Flagged__c; Notes__c redacted)'
         });
 
         r.contextJson = JSON.serialize(ctx, true);

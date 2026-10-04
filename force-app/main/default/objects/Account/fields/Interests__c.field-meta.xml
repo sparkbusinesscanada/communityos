@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Interests__c</fullName>
+    <description>What the family is interested in.</description>
+    <label>Interests</label>
+    <type>MultiselectPicklist</type>
+    <visibleLines>4</visibleLines>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value><fullName>Birthday parties</fullName><default>false</default><label>Birthday parties</label></value>
+            <value><fullName>Camps and classes</fullName><default>false</default><label>Camps and classes</label></value>
+            <value><fullName>Laser tag</fullName><default>false</default><label>Laser tag</label></value>
+            <value><fullName>Drop-in play</fullName><default>false</default><label>Drop-in play</label></value>
+            <value><fullName>Grown-up events</fullName><default>false</default><label>Grown-up events</label></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Deposit_Discussed__c</fullName>
+    <description>Deposit policy was explained.</description>
+    <label>Deposit Discussed</label>
+    <defaultValue>false</defaultValue>
+    <type>Checkbox</type>
+</CustomField>

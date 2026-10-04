@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Household_Role__c</fullName>
+    <description>Role of this adult in the household. Children live in Minor__c.</description>
+    <label>Household Role</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Primary Guardian</fullName>
+                <default>false</default>
+                <label>Primary Guardian</label>
+            </value>
+            <value>
+                <fullName>Guardian</fullName>
+                <default>false</default>
+                <label>Guardian</label>
+            </value>
+            <value>
+                <fullName>Other Adult</fullName>
+                <default>false</default>
+                <label>Other Adult</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

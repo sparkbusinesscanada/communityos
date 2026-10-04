@@ -1,0 +1,11 @@
+{
+  "name": "communityos-evals",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "us006": "tsx us006-readonly.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}
