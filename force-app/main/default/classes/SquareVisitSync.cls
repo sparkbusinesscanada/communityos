@@ -11,7 +11,7 @@
  */
 public without sharing class SquareVisitSync implements Queueable, Database.AllowsCallouts {
     public static final String SQUARE_VERSION = '2025-01-23';
-    @TestVisible static final Integer PAGE_SIZE = 500;
+    @TestVisible static final Integer PAGE_SIZE = 200;
     @TestVisible static final Integer MAX_PAGES = 200;
 
     private final Integer days;
@@ -85,6 +85,11 @@ public without sharing class SquareVisitSync implements Queueable, Database.Allo
         req.setTimeout(60000);
         req.setHeader('Content-Type', 'application/json');
         req.setHeader('Square-Version', SQUARE_VERSION);
+        // Same token source as the existing Square integration (Square_Config__mdt via SquareIntegrationConstants).
+        String token = SquareIntegrationConstants.getAccessToken();
+        if (String.isNotBlank(token)) {
+            req.setHeader('Authorization', 'Bearer ' + token);
+        }
         req.setBody(JSON.serialize(body));
         return req;
     }

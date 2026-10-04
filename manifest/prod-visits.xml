@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types><members>CommunityOS_Offering</members><members>CommunityOS_Source_System</members><name>GlobalValueSet</name></types>
+    <types><members>Visit__c</members><members>CommunityOS_Settings__c</members><name>CustomObject</name></types>
+    <types>
+        <members>Visit__c.Amount__c</members>
+        <members>Visit__c.Channel__c</members>
+        <members>Visit__c.Contact__c</members>
+        <members>Visit__c.Counts_As_Visit__c</members>
+        <members>Visit__c.Discount__c</members>
+        <members>Visit__c.Household__c</members>
+        <members>Visit__c.Item_Count__c</members>
+        <members>Visit__c.Item_Summary__c</members>
+        <members>Visit__c.Last_Synced__c</members>
+        <members>Visit__c.Location_Id__c</members>
+        <members>Visit__c.Minor__c</members>
+        <members>Visit__c.Offering__c</members>
+        <members>Visit__c.Source_System__c</members>
+        <members>Visit__c.Source_URL__c</members>
+        <members>Visit__c.Square_Customer_Id__c</members>
+        <members>Visit__c.Square_Order_Id__c</members>
+        <members>Visit__c.Tax__c</members>
+        <members>Visit__c.Tip__c</members>
+        <members>Visit__c.Visited_At__c</members>
+        <members>CommunityOS_Settings__c.Square_Location_Id__c</members>
+        <members>CommunityOS_Settings__c.Square_Sync_Days__c</members>
+        <members>CommunityOS_Settings__c.Square_Last_Sync__c</members>
+        <members>CommunityOS_Settings__c.Square_Sync_Status__c</members>
+        <name>CustomField</name>
+    </types>
+    <types><members>Visit__c.Source_Refs_Required</members><name>ValidationRule</name></types>
+    <types><members>SquareVisitSync</members><members>SquareVisitSyncJob</members><members>SquareVisitSyncTest</members><name>ApexClass</name></types>
+    <types><members>CommunityOS_Visits_Read</members><name>PermissionSet</name></types>
+    <version>66.0</version>
+</Package>
