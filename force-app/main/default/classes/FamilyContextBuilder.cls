@@ -149,6 +149,19 @@ public with sharing class FamilyContextBuilder {
             'Order.Laser_Tag_Package__c', 'Order.Number_of_Kids__c', 'Order.Number_of_Adults__c', 'Order.Refund_Amount__c'
         });
 
+        // Square visits: aggregates only (no item lines, no card or ticket details).
+        VisitSummaryService.Summary vs = VisitSummaryService.get(accountId);
+        if (vs != null && vs.source != null && vs.source.startsWith('Square')) {
+            ctx.put('squareVisits', new Map<String, Object>{
+                'lastVisit' => vs.lastVisitDate == null ? null : String.valueOf(vs.lastVisitDate),
+                'visitDaysThisYear' => vs.visitsThisYear,
+                'visitDaysLast90' => vs.visitsLast90Days,
+                'spendLast12Months' => vs.spend12Months,
+                'mix' => vs.mix
+            });
+            r.fieldsSent.addAll(new List<String>{ 'Visit__c.Visited_At__c (aggregated)', 'Visit__c.Amount__c (sum)', 'Visit__c.Offering__c (counts)' });
+        }
+
         List<Object> campRows = new List<Object>();
         if (!contactIds.isEmpty()) {
             for (Participant__c p : [

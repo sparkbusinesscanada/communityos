@@ -19,6 +19,6 @@
         <type>AutoNumber</type>
     </nameField>
     <pluralLabel>Visits</pluralLabel>
-    <sharingModel>ReadWrite</sharingModel>
+    <sharingModel>Read</sharingModel>
     <visibility>Public</visibility>
 </CustomObject>

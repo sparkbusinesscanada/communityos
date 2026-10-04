@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Counts_As_Visit__c</fullName>
+    <defaultValue>true</defaultValue>
+    <description>False when the order was only a deposit, gift card or cash back (paid, but nobody came in).</description>
+    <label>Counts As Visit</label>
+    <type>Checkbox</type>
+</CustomField>

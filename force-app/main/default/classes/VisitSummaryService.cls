@@ -1,85 +1,80 @@
 /**
- * Last visit, visits this year and spend for a family. Reads Square live (read-only, orders/search)
- * through the Square_Production named credential when it answers; otherwise falls back to the
- * Square orders already synced into Salesforce. Never writes to Square.
+ * Last visit, visits this year, spend and visit mix for a family.
+ * Reads Visit__c (Square orders copied nightly by SquareVisitSync). Counts one visit per day.
+ * Falls back to Salesforce Orders when no Square visits are linked yet. Never calls Square.
  */
 public with sharing class VisitSummaryService {
     public class Summary {
         @AuraEnabled public String source;
         @AuraEnabled public String lastVisit;
         @AuraEnabled public Integer visitsThisYear = 0;
+        @AuraEnabled public Integer visitsLast90Days = 0;
         @AuraEnabled public Decimal spend12Months = 0;
+        @AuraEnabled public String mix;
         @AuraEnabled public String note;
+        public Date lastVisitDate;
     }
 
     public static Summary get(Id accountId) {
-        Set<String> squareIds = new Set<String>();
-        for (Contact c : [SELECT Square_Id__c FROM Contact WHERE AccountId = :accountId AND Square_Id__c != null WITH USER_MODE LIMIT 10]) {
-            squareIds.add(c.Square_Id__c);
+        Summary fromVisits = fromVisits(accountId);
+        if (fromVisits != null) {
+            return fromVisits;
         }
-        CommunityOS_Settings__c s = CommunityOS_Settings__c.getInstance();
-        String location = s == null ? null : s.Square_Location_Id__c;
-        if (!squareIds.isEmpty() && String.isNotBlank(location)) {
-            try {
-                Summary live = fromSquare(new List<String>(squareIds), location);
-                if (live != null) { return live; }
-            } catch (Exception e) {
-                System.debug(LoggingLevel.WARN, 'Square read failed: ' + e.getMessage());
-            }
-        }
-        return fromSalesforce(accountId, squareIds.isEmpty() ? 'No Square customer linked to this family.' :
-            'Live Square is not reachable here; showing Square orders synced to Salesforce.');
+        Integer linked = [SELECT COUNT() FROM Contact WHERE AccountId = :accountId AND Square_Id__c != null WITH USER_MODE];
+        return fromSalesforce(accountId, linked == 0
+            ? 'No Square customer linked to this family.'
+            : 'No Square visits synced for this family yet; showing Salesforce orders.');
     }
 
-    @TestVisible
-    private static Summary fromSquare(List<String> customerIds, String locationId) {
-        HttpRequest req = new HttpRequest();
-        req.setEndpoint('callout:Square_Production/orders/search');
-        req.setMethod('POST');
-        req.setTimeout(10000);
-        req.setHeader('Content-Type', 'application/json');
-        req.setHeader('Square-Version', '2025-01-23');
-        req.setBody(JSON.serialize(new Map<String, Object>{
-            'location_ids' => new List<String>{ locationId },
-            'limit' => 100,
-            'query' => new Map<String, Object>{
-                'filter' => new Map<String, Object>{
-                    'customer_filter' => new Map<String, Object>{ 'customer_ids' => customerIds },
-                    'state_filter' => new Map<String, Object>{ 'states' => new List<String>{ 'COMPLETED' } },
-                    'date_time_filter' => new Map<String, Object>{
-                        'closed_at' => new Map<String, Object>{ 'start_at' => Datetime.now().addDays(-365).formatGmt('yyyy-MM-dd\'T\'HH:mm:ss\'Z\'') }
-                    }
-                },
-                'sort' => new Map<String, Object>{ 'sort_field' => 'CLOSED_AT', 'sort_order' => 'DESC' }
-            }
-        }));
-        HttpResponse res = new Http().send(req);
-        if (res.getStatusCode() != 200) {
+    private static Summary fromVisits(Id accountId) {
+        List<Visit__c> visits = [
+            SELECT Visited_At__c, Amount__c, Offering__c, Counts_As_Visit__c
+            FROM Visit__c
+            WHERE Household__c = :accountId AND Visited_At__c = LAST_N_DAYS:365
+            WITH USER_MODE ORDER BY Visited_At__c DESC LIMIT 2000
+        ];
+        if (visits.isEmpty()) {
             return null;
         }
-        Map<String, Object> body = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
         Summary sm = new Summary();
-        sm.source = 'Square (live)';
         Integer year = Date.today().year();
-        List<Object> orders = body.get('orders') == null ? new List<Object>() : (List<Object>) body.get('orders');
-        for (Object o : orders) {
-            Map<String, Object> om = (Map<String, Object>) o;
-            String closed = (String) om.get('closed_at');
-            Datetime dt = closed == null ? null : (Datetime) JSON.deserialize('"' + closed + '"', Datetime.class);
-            if (dt != null && sm.lastVisit == null) { sm.lastVisit = dt.format('d MMM yyyy'); }
-            if (dt != null && dt.year() == year) { sm.visitsThisYear++; }
-            Map<String, Object> money = (Map<String, Object>) om.get('total_money');
-            if (money != null && money.get('amount') != null) {
-                sm.spend12Months += Decimal.valueOf(String.valueOf(money.get('amount'))) / 100;
+        Date since90 = Date.today().addDays(-90);
+        Set<Date> days = new Set<Date>();
+        Set<Date> days90 = new Set<Date>();
+        Map<String, Integer> mix = new Map<String, Integer>();
+        for (Visit__c v : visits) {
+            sm.spend12Months += v.Amount__c == null ? 0 : v.Amount__c;
+            if (!v.Counts_As_Visit__c) {
+                continue;
             }
+            Date d = v.Visited_At__c.date();
+            if (sm.lastVisitDate == null) {
+                sm.lastVisitDate = d;
+                sm.lastVisit = v.Visited_At__c.format('d MMM yyyy');
+            }
+            if (d.year() == year) { days.add(d); }
+            if (d >= since90) { days90.add(d); }
+            String k = v.Offering__c == null ? 'Other' : v.Offering__c;
+            mix.put(k, (mix.containsKey(k) ? mix.get(k) : 0) + 1);
         }
-        if (orders.isEmpty()) { sm.note = 'No completed Square orders in the last 12 months.'; }
+        sm.visitsThisYear = days.size();
+        sm.visitsLast90Days = days90.size();
+        List<String> parts = new List<String>();
+        for (String k : new List<String>{ 'Drop-in', 'Party', 'Laser tag', 'Camp', 'Café', 'Retail', 'Other' }) {
+            if (mix.containsKey(k)) { parts.add(k + ' ' + mix.get(k)); }
+        }
+        sm.mix = String.join(parts, ' · ');
+        CommunityOS_Settings__c s = CommunityOS_Settings__c.getOrgDefaults();
+        sm.source = 'Square visits, synced nightly';
+        if (s != null && s.Square_Last_Sync__c != null) {
+            sm.source += ' (last sync ' + s.Square_Last_Sync__c.format('d MMM h:mm a') + ')';
+        }
         return sm;
     }
 
     private static Summary fromSalesforce(Id accountId, String note) {
         Summary sm = new Summary();
-        sm.source = 'Salesforce (synced Square orders)';
+        sm.source = 'Salesforce orders';
         sm.note = note;
         Integer year = Date.today().year();
         Date since = Date.today().addDays(-365);

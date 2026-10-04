@@ -30,6 +30,15 @@ public with sharing class ProfileService {
         public Integer laserOrders = 0;
         public Date lastActivity;
         public Date customerSince;
+        public Integer visitsLast90Days = 0;
+        public Date lastVisit;
+
+        public void addVisits(VisitSummaryService.Summary v) {
+            if (v == null) { return; }
+            visitsLast90Days = v.visitsLast90Days == null ? 0 : v.visitsLast90Days;
+            lastVisit = v.lastVisitDate;
+            if (lastVisit != null && (lastActivity == null || lastVisit > lastActivity)) { lastActivity = lastVisit; }
+        }
     }
 
     public static Profile read(Account a, Signals sig) {
@@ -86,7 +95,7 @@ public with sharing class ProfileService {
         if (sig.laserOrders > 0 || i.contains('Laser tag')) {
             out.add('Laser tag');
         }
-        if (frequency == 'Weekly' || frequency == 'Monthly') {
+        if (frequency == 'Weekly' || frequency == 'Monthly' || sig.visitsLast90Days >= 3) {
             out.add('Regular visitor');
         }
         if (String.isNotBlank(school)) {

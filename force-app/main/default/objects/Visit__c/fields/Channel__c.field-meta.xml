@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Channel__c</fullName>
+    <description>Square order source, e.g. Point of Sale or Online.</description>
+    <label>Channel</label>
+    <length>60</length>
+    <required>false</required>
+    <type>Text</type>
+</CustomField>

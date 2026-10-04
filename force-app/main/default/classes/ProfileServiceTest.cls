@@ -69,20 +69,12 @@ private class ProfileServiceTest {
     }
 
     @IsTest
-    static void visitSummaryLiveAndFallback() {
+    static void visitSummaryFallsBackToOrders() {
         Id sqAccount = [SELECT Id FROM Account WHERE Name = 'Sqtest Household' LIMIT 1].Id;
-        System.assertEquals(1, [SELECT COUNT() FROM Contact WHERE AccountId = :sqAccount AND Square_Id__c != null], 'Square id kept on insert');
-        Test.setMock(HttpCalloutMock.class, new SquareMock(200));
-        Test.startTest();
-        VisitSummaryService.Summary live = Family360Controller.getVisitSummary(sqAccount);
-        System.assertEquals(null, live.note, 'Live Square answered');
-        System.assertEquals('Square (live)', live.source);
-        System.assertEquals(2, live.visitsThisYear);
-        System.assertEquals(75, live.spend12Months);
-        Test.setMock(HttpCalloutMock.class, new SquareMock(401));
-        VisitSummaryService.Summary fallback = VisitSummaryService.get(sqAccount);
-        Test.stopTest();
-        System.assert(fallback.source.startsWith('Salesforce'));
-        System.assertNotEquals(null, fallback.note);
+        VisitSummaryService.Summary linked = Family360Controller.getVisitSummary(sqAccount);
+        System.assertEquals('Salesforce orders', linked.source);
+        System.assert(linked.note.contains('No Square visits synced'), linked.note);
+        VisitSummaryService.Summary unlinked = VisitSummaryService.get(accountId());
+        System.assert(unlinked.note.contains('No Square customer'), unlinked.note);
     }
 }

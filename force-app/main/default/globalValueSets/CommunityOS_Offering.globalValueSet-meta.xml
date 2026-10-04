@@ -16,6 +16,21 @@
         <label>Camp</label>
     </customValue>
     <customValue>
+        <fullName>Laser tag</fullName>
+        <default>false</default>
+        <label>Laser tag</label>
+    </customValue>
+    <customValue>
+        <fullName>Café</fullName>
+        <default>false</default>
+        <label>Café</label>
+    </customValue>
+    <customValue>
+        <fullName>Retail</fullName>
+        <default>false</default>
+        <label>Retail</label>
+    </customValue>
+    <customValue>
         <fullName>Other</fullName>
         <default>false</default>
         <label>Other</label>

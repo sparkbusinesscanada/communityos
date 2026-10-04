@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Square_Customer_Id__c</fullName>
+    <description>Square customer on the order. Used to match the paying guardian by Contact.Square_Id__c.</description>
+    <label>Square Customer Id</label>
+    <length>64</length>
+    <required>false</required>
+    <type>Text</type>
+</CustomField>

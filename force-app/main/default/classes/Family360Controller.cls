@@ -240,6 +240,7 @@ public with sharing class Family360Controller {
         }
 
         sig.camps = h.camps.size();
+        sig.addVisits(VisitSummaryService.get(accountId));
         h.profile = ProfileService.read(a, sig);
 
         for (Schema.PicklistEntry e : Team_notes__c.Team_Member__c.getDescribe().getPicklistValues()) {
@@ -299,6 +300,7 @@ public with sharing class Family360Controller {
             sig.partiesHosted = h.partiesHosted == null ? 0 : h.partiesHosted.intValue();
             sig.bookings = h.bookings.size();
             sig.camps = h.camps.size();
+            sig.addVisits(VisitSummaryService.get(accountId));
             ProfileService.save(accountId, input, sig);
         } catch (Exception e) {
             throw new AuraHandledException(e.getMessage());

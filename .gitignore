@@ -8,3 +8,6 @@ node_modules/
 *.key
 *.pem
 *.crt
+
+# Local data samples (real customer data, never commit)
+.local/

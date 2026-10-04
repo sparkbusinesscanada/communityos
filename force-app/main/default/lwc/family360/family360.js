@@ -205,7 +205,15 @@ export default class Family360 extends NavigationMixin(LightningElement) {
         if (!this.visit) {
             return '';
         }
-        return this.visit.note ? `${this.visit.source}. ${this.visit.note}` : this.visit.source;
+        const parts = [];
+        if (this.visit.mix) {
+            parts.push(`Visit mix: ${this.visit.mix}`);
+        }
+        parts.push(this.visit.source);
+        if (this.visit.note) {
+            parts.push(this.visit.note);
+        }
+        return parts.join('. ');
     }
 
     get segments() {
