@@ -17,6 +17,13 @@ private class RedactorTest {
     }
 
     @IsTest
+    static void venueWordsAreNotTreatedAsNames() {
+        String out = Redactor.redact('10 Mini Party Packs for Maya.', new Set<String>{ 'Party', 'Maya' });
+        System.assert(out.contains('Mini Party Packs'), out);
+        System.assert(!out.contains('Maya'), out);
+    }
+
+    @IsTest
     static void masksWholeHealthSentenceKeepsTheRest() {
         String out = Redactor.redact('Wants the jungle room. Has a nut allergy and carries an EpiPen. Pizza: cheese.');
         System.assert(out.contains('jungle room'), out);

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>AI_Call_Log__c</fullName>
+    <description>AI call that produced the answer.</description>
+    <label>AI Call Log</label>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <referenceTo>AI_Call_Log__c</referenceTo>
+    <relationshipLabel>Desk Questions</relationshipLabel>
+    <relationshipName>Desk_Questions</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>

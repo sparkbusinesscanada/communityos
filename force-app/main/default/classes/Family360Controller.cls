@@ -44,6 +44,11 @@ public with sharing class Family360Controller {
         @AuraEnabled public List<Row> notes = new List<Row>();
         @AuraEnabled public List<Row> openTasks = new List<Row>();
         @AuraEnabled public List<String> teamMembers = new List<String>();
+        @AuraEnabled public List<Row> deskHistory = new List<Row>();
+        @AuraEnabled public Decimal lifetimeSpend = 0;
+        @AuraEnabled public Integer unpaidOrders = 0;
+        @AuraEnabled public String nextEvent;
+        @AuraEnabled public String lastEvent;
     }
 
     @AuraEnabled(cacheable=true)
@@ -116,6 +121,11 @@ public with sharing class Family360Controller {
             ORDER BY Event_Date_and_Start_Time__c DESC NULLS LAST LIMIT :ROWS
         ]) {
             bookingIds.add(o.Id);
+            if (o.Event_Date_and_Start_Time__c != null) {
+                String label = o.Event_Date_and_Start_Time__c.format('d MMM yyyy');
+                if (o.Event_Date_and_Start_Time__c >= Datetime.now()) { h.nextEvent = label; }
+                else if (h.lastEvent == null) { h.lastEvent = label; }
+            }
             h.bookings.add(new Row(o.Id, o.Name,
                 joinNonBlank(new List<String>{ o.Booking_Type__c, o.Party_Package__c, o.Activity_Room__c, o.Amount == null ? null : '$' + o.Amount.setScale(2) }, ' · '),
                 o.Event_Date_and_Start_Time__c == null ? null : o.Event_Date_and_Start_Time__c.format('EEE d MMM yyyy'),
@@ -128,6 +138,8 @@ public with sharing class Family360Controller {
             FROM Order WHERE AccountId = :accountId WITH USER_MODE ORDER BY EffectiveDate DESC LIMIT :ROWS
         ]) {
             orderIds.add(o.Id);
+            if (o.Invoice_Status__c == 'PAID' && o.Total_Amount_with_Taxes__c != null) { h.lifetimeSpend += o.Total_Amount_with_Taxes__c; }
+            if (o.Invoice_Status__c != null && o.Invoice_Status__c != 'PAID' && o.Status != 'Draft') { h.unpaidOrders++; }
             h.orders.add(new Row(o.Id, 'Order ' + o.OrderNumber,
                 joinNonBlank(new List<String>{ o.Total_Amount_with_Taxes__c == null ? null : '$' + o.Total_Amount_with_Taxes__c.setScale(2), o.Laser_Tag_Package__c }, ' · '),
                 o.EffectiveDate == null ? null : Datetime.newInstance(o.EffectiveDate, Time.newInstance(12, 0, 0, 0)).format('d MMM yyyy'),
@@ -177,10 +189,46 @@ public with sharing class Family360Controller {
             h.openTasks.add(r);
         }
 
+        for (Desk_Question__c dq : [
+            SELECT Id, Question__c, Answer__c, Answer_Status__c, Source_Records__c, Asked_At__c,
+                   Resolved_On_Spot__c, Escalated_To_Owner__c
+            FROM Desk_Question__c WHERE Account__c = :accountId WITH USER_MODE
+            ORDER BY Asked_At__c DESC LIMIT 10
+        ]) {
+            String outcome = dq.Resolved_On_Spot__c ? 'Resolved' : (dq.Escalated_To_Owner__c ? 'Escalated' : dq.Answer_Status__c);
+            Row r = new Row(dq.Id, dq.Question__c, dq.Source_Records__c == null ? null : 'Sources: ' + dq.Source_Records__c,
+                dq.Asked_At__c == null ? null : dq.Asked_At__c.format('d MMM, h:mm a'), outcome);
+            r.body = dq.Answer__c;
+            h.deskHistory.add(r);
+        }
+
         for (Schema.PicklistEntry e : Team_notes__c.Team_Member__c.getDescribe().getPicklistValues()) {
             if (e.isActive()) { h.teamMembers.add(e.getValue()); }
         }
         return h;
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static List<DeskAgentService.Question> getDeskQuestions() {
+        return DeskAgentService.templates();
+    }
+
+    @AuraEnabled
+    public static DeskAgentService.DeskResult askDesk(Id accountId, List<String> keys) {
+        try {
+            return DeskAgentService.ask(accountId, keys);
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    @AuraEnabled
+    public static void markDeskOutcome(Id deskQuestionId, String outcome) {
+        try {
+            DeskAgentService.markOutcome(deskQuestionId, outcome);
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
     }
 
     @AuraEnabled

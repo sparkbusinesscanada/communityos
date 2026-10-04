@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Order__c</fullName>
+    <description>Order the answer relied on, if any.</description>
+    <label>Order</label>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <referenceTo>Order</referenceTo>
+    <relationshipLabel>Desk Questions</relationshipLabel>
+    <relationshipName>Desk_Questions</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>

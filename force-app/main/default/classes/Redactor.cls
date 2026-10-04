@@ -13,6 +13,13 @@ public with sharing class Redactor {
         'medical|medicat|medicine|condition|surgery|hospital|celiac|lactose|peanut|\\bnuts?\\b|disabilit|special needs|therapy).*'
     );
 
+    /** Words that appear in name fields but are ordinary venue vocabulary; never masked as names. */
+    private static final Set<String> NOT_NAMES = new Set<String>{
+        'party', 'parties', 'birthday', 'kids', 'kid', 'child', 'children', 'family', 'mini', 'pack', 'packs',
+        'pizza', 'cheese', 'room', 'field', 'underwater', 'mountain', 'shore', 'general', 'private', 'semi',
+        'laser', 'tag', 'camp', 'class', 'club', 'and', 'the', 'for', 'with', 'mom', 'dad', 'baby', 'twins', 'test'
+    };
+
     public static String redact(String input) {
         return redact(input, new Set<String>());
     }
@@ -36,7 +43,7 @@ public with sharing class Redactor {
             return s;
         }
         for (String name : knownNames) {
-            if (String.isBlank(name) || name.trim().length() < 2) {
+            if (String.isBlank(name) || name.trim().length() < 2 || NOT_NAMES.contains(name.trim().toLowerCase())) {
                 continue;
             }
             s = s.replaceAll('(?i)\\b' + Pattern.quote(name.trim()) + '\\b', '[NAME]');

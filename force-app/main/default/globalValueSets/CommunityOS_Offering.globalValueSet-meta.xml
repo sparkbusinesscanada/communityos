@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GlobalValueSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customValue>
+        <fullName>Drop-in</fullName>
+        <default>false</default>
+        <label>Drop-in</label>
+    </customValue>
+    <customValue>
+        <fullName>Party</fullName>
+        <default>false</default>
+        <label>Party</label>
+    </customValue>
+    <customValue>
+        <fullName>Camp</fullName>
+        <default>false</default>
+        <label>Camp</label>
+    </customValue>
+    <customValue>
+        <fullName>Other</fullName>
+        <default>false</default>
+        <label>Other</label>
+    </customValue>
+    <masterLabel>CommunityOS Offering</masterLabel>
+    <sorted>false</sorted>
+</GlobalValueSet>

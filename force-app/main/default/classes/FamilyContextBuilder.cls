@@ -69,7 +69,7 @@ public with sharing class FamilyContextBuilder {
         r.fieldsSent.addAll(new List<String>{ 'Contact.Relationship__c', 'Contact.Unsubscribe__c', 'Contact.Square_Origin__c' });
 
         List<Opportunity> bookings = [
-            SELECT Id, StageName, Amount, Event_Type__c, Booking_Type__c, Party_Package__c,
+            SELECT Id, StageName, Amount, Event_Type__c, Booking_Type__c, Party_Package__c, Activity_Room__c,
                    Event_Date_and_Start_Time__c, Estimated_Children__c, Estimated_Adults__c,
                    Summary_of_Add_Ons__c, Pizza_or_Add_on_Preferences__c, Laser_Tag__c,
                    Reason_for_Cancellation__c, Party_Re_booked_using_one_time_transfer__c, Previous_Booking__c
@@ -90,6 +90,7 @@ public with sharing class FamilyContextBuilder {
                 'eventType' => o.Event_Type__c,
                 'bookingType' => o.Booking_Type__c,
                 'package' => o.Party_Package__c,
+                'room' => o.Activity_Room__c,
                 'eventDate' => o.Event_Date_and_Start_Time__c == null ? null : String.valueOf(o.Event_Date_and_Start_Time__c.date()),
                 'estimatedChildren' => o.Estimated_Children__c,
                 'estimatedAdults' => o.Estimated_Adults__c,
@@ -104,7 +105,7 @@ public with sharing class FamilyContextBuilder {
         ctx.put('bookings', bookingRows);
         r.fieldsSent.addAll(new List<String>{
             'Opportunity.StageName', 'Opportunity.Amount', 'Opportunity.Event_Type__c', 'Opportunity.Booking_Type__c',
-            'Opportunity.Party_Package__c', 'Opportunity.Event_Date_and_Start_Time__c', 'Opportunity.Estimated_Children__c',
+            'Opportunity.Party_Package__c', 'Opportunity.Activity_Room__c', 'Opportunity.Event_Date_and_Start_Time__c', 'Opportunity.Estimated_Children__c',
             'Opportunity.Estimated_Adults__c', 'Opportunity.Summary_of_Add_Ons__c (redacted)',
             'Opportunity.Pizza_or_Add_on_Preferences__c (redacted)', 'Opportunity.Laser_Tag__c',
             'Opportunity.Reason_for_Cancellation__c', 'Opportunity.Party_Re_booked_using_one_time_transfer__c',
@@ -172,12 +173,15 @@ public with sharing class FamilyContextBuilder {
         List<Object> noteRows = new List<Object>();
         if (!contactIds.isEmpty() || !bookingIds.isEmpty() || !orderIds.isEmpty()) {
             for (Team_notes__c n : [
-                SELECT Comments__c, Team_Member__c, CreatedDate
+                SELECT Id, Comments__c, Team_Member__c, CreatedDate
                 FROM Team_notes__c
                 WHERE Contact__c IN :contactIds OR Opportunity__c IN :bookingIds OR Order__c IN :orderIds
                 WITH USER_MODE ORDER BY CreatedDate DESC LIMIT :MAX_ROWS
             ]) {
+                String noteToken = 'Note ' + (noteRows.size() + 1);
+                r.tokenToRecordId.put(noteToken, n.Id);
                 noteRows.add(new Map<String, Object>{
+                    'token' => noteToken,
                     'date' => String.valueOf(n.CreatedDate.date()),
                     'byTeamMember' => String.isNotBlank(n.Team_Member__c),
                     'text' => Redactor.redact(n.Comments__c, knownNames)
