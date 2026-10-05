@@ -6,6 +6,9 @@ public with sharing class Family360Controller {
     private static final Integer ROWS = 25;
 
     public class HouseholdHit {
+        @AuraEnabled public String kind = 'Household';
+        @AuraEnabled public String key;
+        @AuraEnabled public Id leadId;
         @AuraEnabled public Id accountId;
         @AuraEnabled public String name;
         @AuraEnabled public String phone;
@@ -64,7 +67,7 @@ public with sharing class Family360Controller {
             return hits;
         }
         String scope = t.contains('@') ? 'EMAIL FIELDS' : (t.replaceAll('[^0-9]', '').length() >= 7 ? 'PHONE FIELDS' : 'NAME FIELDS');
-        String sosl = 'FIND :t IN ' + scope + ' RETURNING Account(Id), Contact(AccountId) LIMIT 50';
+        String sosl = 'FIND :t IN ' + scope + ' RETURNING Account(Id), Contact(AccountId), Lead(Id, FirstName, LastName, Phone, Status, LeadSource, CreatedDate WHERE IsConverted = false ORDER BY CreatedDate DESC) LIMIT 50';
         List<List<SObject>> found = Search.query(sosl, AccessLevel.USER_MODE);
 
         Set<Id> accountIds = new Set<Id>();
@@ -73,7 +76,20 @@ public with sharing class Family360Controller {
             Id aid = (Id) c.get('AccountId');
             if (aid != null) { accountIds.add(aid); }
         }
+        List<HouseholdHit> leadHits = new List<HouseholdHit>();
+        for (SObject so : found[2]) {
+            Lead l = (Lead) so;
+            HouseholdHit h = new HouseholdHit();
+            h.kind = 'Lead';
+            h.key = l.Id;
+            h.leadId = l.Id;
+            h.name = ((l.FirstName == null ? '' : l.FirstName + ' ') + l.LastName).trim();
+            h.phone = l.Phone;
+            h.people = 'Lead · ' + joinNonBlank(new List<String>{ l.Status, l.LeadSource, l.CreatedDate == null ? null : l.CreatedDate.format('d MMM yyyy') }, ' · ');
+            if (leadHits.size() < 10) { leadHits.add(h); }
+        }
         if (accountIds.isEmpty()) {
+            hits.addAll(leadHits);
             return hits;
         }
         for (Account a : [
@@ -90,8 +106,10 @@ public with sharing class Family360Controller {
             List<String> names = new List<String>();
             for (Contact c : a.Contacts) { names.add(((c.FirstName == null ? '' : c.FirstName + ' ') + c.LastName).trim()); }
             h.people = String.join(names, ', ');
+            h.key = a.Id;
             hits.add(h);
         }
+        hits.addAll(leadHits);
         return hits;
     }
 

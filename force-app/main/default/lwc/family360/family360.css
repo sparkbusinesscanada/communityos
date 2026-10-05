@@ -576,3 +576,5 @@
 .ai-meter-part::before { content: '·'; margin-right: 0.875rem; color: var(--f360-quiet, #706e6b); }
 .ai-meter-note { margin-left: auto; font-size: 0.75rem; color: var(--f360-quiet, #706e6b); }
 @media (max-width: 860px) { .ai-meter-note { margin-left: 0; width: 100%; } }
+
+.hit-lead .row-title { color: var(--f360-quiet, #706e6b); }

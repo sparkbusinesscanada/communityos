@@ -535,7 +535,7 @@ export default class Family360 extends NavigationMixin(LightningElement) {
     async runSearch() {
         this.searching = true;
         try {
-            this.hits = await searchHouseholds({ term: this.searchTerm.trim() });
+            this.hits = (await searchHouseholds({ term: this.searchTerm.trim() })).map((h) => ({ ...h, isLead: h.kind === 'Lead', cls: h.kind === 'Lead' ? 'hit hit-lead' : 'hit', recId: h.kind === 'Lead' ? h.leadId : h.accountId }));
             this.searchedOnce = true;
         } catch (e) {
             this.toast('Search failed', this.errorText(e), 'error');
@@ -546,6 +546,10 @@ export default class Family360 extends NavigationMixin(LightningElement) {
 
     handleSelectHit(event) {
         const id = event.currentTarget.dataset.id;
+        if (event.currentTarget.dataset.kind === 'Lead') {
+            this[NavigationMixin.Navigate]({ type: 'standard__recordPage', attributes: { recordId: id, actionName: 'view' } });
+            return;
+        }
         this.hits = [];
         this.searchedOnce = false;
         this.loadHousehold(id);

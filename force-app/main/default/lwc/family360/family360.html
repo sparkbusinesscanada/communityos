@@ -410,7 +410,7 @@
         <template lwc:else>
             <section class="search-hero">
                 <h1 class="search-title">Family 360</h1>
-                <p class="search-sub">Find a family by phone, email or name.</p>
+                <p class="search-sub">Find a family or an open lead by phone, email or name.</p>
                 <div class="search-box">
                     <lightning-input type="search" label="Search" variant="label-hidden" placeholder="e.g. 604 555 0199 or jane@example.com"
                         value={searchTerm} onchange={handleSearchInput} is-loading={searching}></lightning-input>
@@ -421,9 +421,9 @@
                 <template lwc:if={hasHits}>
                     <ul class="hits">
                         <template for:each={hits} for:item="h">
-                            <li key={h.accountId} class="hit" data-id={h.accountId} onclick={handleSelectHit}>
+                            <li key={h.key} class={h.cls} data-id={h.recId} data-kind={h.kind} onclick={handleSelectHit}>
                                 <div>
-                                    <div class="row-title">{h.name}</div>
+                                    <div class="row-title">{h.name}<template lwc:if={h.isLead}> <span class="badge badge-quiet">Lead</span></template></div>
                                     <div class="row-sub">{h.people}</div>
                                 </div>
                                 <span class="row-date">{h.phone}</span>
@@ -431,7 +431,7 @@
                         </template>
                     </ul>
                 </template>
-                <template lwc:if={showNoResults}><p class="empty">No household found.</p></template>
+                <template lwc:if={showNoResults}><p class="empty">No household or open lead found.</p></template>
             </section>
         </template>
     </div>

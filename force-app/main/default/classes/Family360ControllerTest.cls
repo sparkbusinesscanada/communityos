@@ -42,6 +42,19 @@ private class Family360ControllerTest {
     }
 
     @IsTest
+    static void searchFindsOpenLeads() {
+        Lead l = new Lead(FirstName = 'Searchy', LastName = 'Leadtest', Company = 'Leadtest', Phone = '6045550177', LeadSource = 'Walk-in');
+        insert l;
+        Test.setFixedSearchResults(new List<Id>{ l.Id });
+        List<Family360Controller.HouseholdHit> hits = Family360Controller.searchHouseholds('Leadtest');
+        Boolean found = false;
+        for (Family360Controller.HouseholdHit h : hits) {
+            if (h.kind == 'Lead' && h.leadId == l.Id) { found = true; }
+        }
+        System.assert(found, 'Open lead appears in search');
+    }
+
+    @IsTest
     static void searchFindsHouseholdByPhone() {
         Id aid = accountId();
         Test.setFixedSearchResults(new List<Id>{ aid });
