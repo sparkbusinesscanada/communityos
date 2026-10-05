@@ -565,3 +565,14 @@
 .draft-row { display: grid; grid-template-columns: 40% 60%; gap: 0.5rem; padding: 0.25rem 0; font-size: 0.8125rem; }
 .draft-row dt { color: var(--f360-quiet, #706e6b); }
 .fineprint.warn { color: #8c4b02; }
+
+/* AI usage banner */
+.ai-meter { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.875rem; padding: 0.5rem 0.875rem; margin-bottom: 0.75rem;
+    border-radius: 0.5rem; background: #f0f6ff; border: 1px solid #c9dcf5; font-size: 0.8125rem; color: var(--f360-ink, #181818); }
+.ai-meter-low { background: #fff7e6; border-color: #f2c66d; }
+.ai-meter-stop { background: #fdecea; border-color: #f0a9a4; }
+.ai-meter-title { font-weight: 600; }
+.ai-meter-part { white-space: nowrap; }
+.ai-meter-part::before { content: '·'; margin-right: 0.875rem; color: var(--f360-quiet, #706e6b); }
+.ai-meter-note { margin-left: auto; font-size: 0.75rem; color: var(--f360-quiet, #706e6b); }
+@media (max-width: 860px) { .ai-meter-note { margin-left: 0; width: 100%; } }

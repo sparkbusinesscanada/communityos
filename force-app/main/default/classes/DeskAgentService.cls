@@ -126,8 +126,12 @@ public with sharing class DeskAgentService {
         );
         Long started = System.currentTimeMillis();
         Map<String, Answer> parsed = new Map<String, Answer>();
+        String limitMsg = AiGuard.dailyLimitMessage(client);
         try {
-            String raw = client.complete(DeskAnswerPrompt.SYSTEM_PROMPT, payload);
+            if (limitMsg != null) {
+                throw new DeskLimitException(limitMsg);
+            }
+            String raw = client.complete(DeskAnswerPrompt.SYSTEM_PROMPT, payload, DeskAnswerPrompt.OUTPUT_SCHEMA);
             log.Response_Json__c = raw == null ? null : raw.left(131072);
             parsed = parse(raw, ctx.tokenToRecordId);
             res.ok = true;
@@ -138,6 +142,12 @@ public with sharing class DeskAgentService {
             log.Error__c = (e.getTypeName() + ': ' + e.getMessage()).left(32768);
         }
         log.Duration_ms__c = System.currentTimeMillis() - started;
+        if (limitMsg != null) {
+            res.error = limitMsg;
+            log.Status__c = 'Limit reached';
+        } else {
+            AiGuard.applyUsage(log, client);
+        }
         insert as system log;
         res.logId = log.Id;
         if (!res.ok) {
@@ -265,4 +275,6 @@ public with sharing class DeskAgentService {
     }
 
     public class DeskException extends Exception {}
+
+    public class DeskLimitException extends Exception {}
 }

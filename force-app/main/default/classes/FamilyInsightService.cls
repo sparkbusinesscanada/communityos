@@ -57,8 +57,12 @@ public with sharing class FamilyInsightService {
 
         Long started = System.currentTimeMillis();
         String raw;
+        String limitMsg = AiGuard.dailyLimitMessage(client);
         try {
-            raw = client.complete(FamilyInsightPrompt.SYSTEM_PROMPT, ctx.contextJson);
+            if (limitMsg != null) {
+                throw new InsightException(limitMsg);
+            }
+            raw = client.complete(FamilyInsightPrompt.SYSTEM_PROMPT, ctx.contextJson, FamilyInsightPrompt.OUTPUT_SCHEMA);
             log.Response_Json__c = raw == null ? null : raw.left(131072);
             parseAndValidate(raw, ctx.tokenToRecordId, res);
             res.ok = true;
@@ -70,6 +74,12 @@ public with sharing class FamilyInsightService {
             log.Error__c = (e.getTypeName() + ': ' + e.getMessage() + '\n' + e.getStackTraceString()).left(32768);
         }
         log.Duration_ms__c = System.currentTimeMillis() - started;
+        if (limitMsg != null) {
+            res.error = limitMsg;
+            log.Status__c = 'Limit reached';
+        } else {
+            AiGuard.applyUsage(log, client);
+        }
         log.Tasks_Suggested__c = res.suggestedTasks.size();
         if (!res.droppedReasons.isEmpty()) {
             log.Error__c = ('Dropped by guardrails:\n' + String.join(res.droppedReasons, '\n')).left(32768);

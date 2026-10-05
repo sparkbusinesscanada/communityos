@@ -14,6 +14,14 @@ public with sharing class MockLlmClient implements LlmClient {
         return 'mock-rules-v1';
     }
 
+    public String complete(String systemPrompt, String contextJson, Map<String, Object> outputSchema) {
+        return complete(systemPrompt, contextJson);
+    }
+
+    public Map<String, Integer> lastUsage() {
+        return new Map<String, Integer>{ 'inputTokens' => 0, 'outputTokens' => 0, 'retries' => 0, 'schemaEnforced' => 0 };
+    }
+
     public String complete(String systemPrompt, String contextJson) {
         Map<String, Object> ctx = (Map<String, Object>) JSON.deserializeUntyped(contextJson);
         if (ctx.containsKey('questions')) {

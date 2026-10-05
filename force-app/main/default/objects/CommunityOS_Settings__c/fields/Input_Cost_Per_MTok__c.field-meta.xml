@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Input_Cost_Per_MTok__c</fullName>
+    <description>USD per million input tokens, for cost estimates. Sonnet 5: 2.</description>
+    <label>Input Cost per MTok (USD)</label>
+    <precision>8</precision>
+    <scale>4</scale>
+    <required>false</required>
+    <type>Number</type>
+</CustomField>

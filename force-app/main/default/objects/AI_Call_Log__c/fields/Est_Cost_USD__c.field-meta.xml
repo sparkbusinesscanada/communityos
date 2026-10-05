@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Est_Cost_USD__c</fullName>
+    <description>Estimated cost from token counts and the rates in CommunityOS Settings.</description>
+    <label>Est. Cost (USD)</label>
+    <precision>10</precision>
+    <scale>4</scale>
+    <required>false</required>
+    <type>Number</type>
+</CustomField>

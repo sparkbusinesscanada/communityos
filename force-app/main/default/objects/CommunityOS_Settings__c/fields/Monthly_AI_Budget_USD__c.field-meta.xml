@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Monthly_AI_Budget_USD__c</fullName>
+    <description>Estimated USD the org may spend on real-model calls per calendar month. Blank means no monthly cap. When reached, AI features pause until the 1st.</description>
+    <label>Monthly AI Budget (USD)</label>
+    <precision>8</precision>
+    <scale>2</scale>
+    <required>false</required>
+    <type>Number</type>
+</CustomField>

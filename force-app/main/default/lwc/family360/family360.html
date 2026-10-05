@@ -1,5 +1,15 @@
 <template>
     <div class="f360">
+        <template lwc:if={aiBanner}>
+            <div class={aiBanner.cls} role="status">
+                <lightning-icon icon-name="utility:sparkles" size="x-small" class="ai-meter-icon"></lightning-icon>
+                <span class="ai-meter-title">{aiBanner.title}</span>
+                <template for:each={aiBanner.parts} for:item="p">
+                    <span key={p.key} class="ai-meter-part">{p.text}</span>
+                </template>
+                <span class="ai-meter-note">{aiBanner.note}</span>
+            </div>
+        </template>
         <template lwc:if={household}>
             <section class="hero">
                 <div class="hero-top">

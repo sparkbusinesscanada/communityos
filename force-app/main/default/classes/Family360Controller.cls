@@ -378,6 +378,31 @@ public with sharing class Family360Controller {
         }
     }
 
+    /** Token and cost tally for the AI usage banner. */
+    @AuraEnabled
+    public static AiGuard.Usage getAiUsage() {
+        try {
+            return AiGuard.usage();
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    /** Staff dismissed an AI-suggested task. Counted on the call log so acceptance rate can be reported. */
+    @AuraEnabled
+    public static void dismissSuggestedTask(Id logId) {
+        if (logId == null) {
+            return;
+        }
+        try {
+            AI_Call_Log__c log = [SELECT Id, Tasks_Dismissed__c FROM AI_Call_Log__c WHERE Id = :logId WITH SYSTEM_MODE];
+            log.Tasks_Dismissed__c = (log.Tasks_Dismissed__c == null ? 0 : log.Tasks_Dismissed__c) + 1;
+            update as system log;
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
     @AuraEnabled
     public static Id addNote(Id accountId, Id contactId, String text, String teamMember) {
         if (String.isBlank(text)) {

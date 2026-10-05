@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Tasks_Dismissed__c</fullName>
+    <description>AI-suggested tasks staff dismissed. With Tasks Created, gives the acceptance rate.</description>
+    <label>Tasks Dismissed</label>
+    <precision>10</precision>
+    <scale>0</scale>
+    <required>false</required>
+    <type>Number</type>
+</CustomField>

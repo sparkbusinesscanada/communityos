@@ -15,6 +15,8 @@ import applyEnquiry from '@salesforce/apex/Family360Controller.applyEnquiry';
 import discardEnquiry from '@salesforce/apex/Family360Controller.discardEnquiry';
 import saveProfile from '@salesforce/apex/Family360Controller.saveProfile';
 import getVisitSummary from '@salesforce/apex/Family360Controller.getVisitSummary';
+import dismissSuggestedTask from '@salesforce/apex/Family360Controller.dismissSuggestedTask';
+import getAiUsage from '@salesforce/apex/Family360Controller.getAiUsage';
 
 const emptyEnquiry = () => ({
     enquiryType: '',
@@ -76,6 +78,7 @@ export default class Family360 extends NavigationMixin(LightningElement) {
     @track draft;
     applying = false;
     @track visit;
+    @track aiUsage;
     loadingVisit = false;
     @track profileDraft = {};
     editingProfile = false;
@@ -105,8 +108,43 @@ export default class Family360 extends NavigationMixin(LightningElement) {
     }
 
     connectedCallback() {
+        this.loadAiUsage();
         if (this.recordId) {
             this.loadHousehold(this.recordId);
+        }
+    }
+
+    get aiBanner() {
+        const u = this.aiUsage;
+        if (!u) {
+            return null;
+        }
+        const money = (n) => `$${Number(n || 0).toFixed(2)}`;
+        const k = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${n || 0}`);
+        if (u.rulesMode) {
+            return { cls: 'ai-meter', title: 'AI: rules mode', parts: [{ key: 'p0', text: 'No API calls, no cost' }], note: 'Switch to Claude in CommunityOS Settings' };
+        }
+        const parts = [
+            `Today ${u.callsToday} of ${u.dailyLimit} calls (${u.callsLeftToday} left)`,
+            `${k(u.tokensToday)} tokens · ${money(u.costToday)}`,
+            u.monthlyBudget != null
+                ? `This month ${money(u.costMonth)} of ${money(u.monthlyBudget)} (${money(u.budgetLeft)} left)`
+                : `This month ${k(u.tokensMonth)} tokens · ${money(u.costMonth)} (no monthly budget set)`
+        ];
+        const low = u.paused || u.callsLeftToday <= u.dailyLimit * 0.1 || (u.monthlyBudget != null && u.budgetLeft <= u.monthlyBudget * 0.1);
+        return {
+            cls: u.paused ? 'ai-meter ai-meter-stop' : low ? 'ai-meter ai-meter-low' : 'ai-meter',
+            title: `AI: ${u.model}`,
+            parts: parts.map((p, i) => ({ key: `p${i}`, text: p })),
+            note: u.paused ? u.pausedReason : 'Estimated from logged tokens'
+        };
+    }
+
+    async loadAiUsage() {
+        try {
+            this.aiUsage = await getAiUsage();
+        } catch (e) {
+            this.aiUsage = undefined;
         }
     }
 
@@ -726,6 +764,7 @@ export default class Family360 extends NavigationMixin(LightningElement) {
                 customQuestion: this.customQuestion.trim() || null,
                 focusRecordId: this.focusRecordId || null
             });
+            this.loadAiUsage();
             if (!res.ok) {
                 this.deskError = res.error;
                 this.deskAnswers = [];
@@ -761,6 +800,7 @@ export default class Family360 extends NavigationMixin(LightningElement) {
         try {
             const res = await getInsights({ accountId: this.household.accountId });
             this.insights = res;
+            this.loadAiUsage();
             if (!res.ok) {
                 this.toast('AI response blocked', res.error, 'warning');
             }
@@ -795,7 +835,11 @@ export default class Family360 extends NavigationMixin(LightningElement) {
     }
 
     handleDismissTask(event) {
+        const logId = this.insights && this.insights.logId;
         this.removeSuggestion(event.currentTarget.dataset.key);
+        if (logId) {
+            dismissSuggestedTask({ logId }).catch(() => {});
+        }
     }
 
     removeSuggestion(key) {

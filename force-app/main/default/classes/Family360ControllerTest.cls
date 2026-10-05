@@ -5,6 +5,8 @@ private class Family360ControllerTest {
         StubLlm(String body) { this.body = body; }
         public String complete(String systemPrompt, String contextJson) { return body; }
         public String modelName() { return 'stub'; }
+        public String complete(String systemPrompt, String contextJson, Map<String, Object> schema) { return body; }
+        public Map<String, Integer> lastUsage() { return new Map<String, Integer>{ 'inputTokens' => 1200, 'outputTokens' => 300, 'retries' => 0, 'schemaEnforced' => 1 }; }
     }
 
     private class AnyCalloutMock implements HttpCalloutMock {
