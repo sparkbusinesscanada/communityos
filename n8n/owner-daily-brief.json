@@ -1,0 +1,109 @@
+{
+  "name": "CommunityOS - Daily owner brief",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Every day 7:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://funcircle.my.salesforce.com/services/apexrest/communityos/brief",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "salesforceOAuth2Api",
+        "options": {}
+      },
+      "name": "Get brief from Salesforce",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json;\nconst money = (n) => '$' + Number(n || 0).toFixed(2);\nconst esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));\nconst parties = (b.partiesToday || []).map((p) =>\n  `<tr><td>${esc(p.timeLabel)}</td><td>${esc(p.booking)}</td><td>${esc(p.room)}</td><td>${esc(p.packageName)}</td><td>${p.kids ?? ''}</td><td>${esc(p.stage)}</td></tr>`).join('');\nconst attention = (b.attention || []).map((a) => `<li>${esc(a)}</li>`).join('');\nconst html = `\n<h2>Fun Circle: morning brief for ${esc(b.forDate)}</h2>\n${b.needsAttention ? `<p style=\"color:#b42318\"><b>Needs attention</b></p><ul>${attention}</ul>` : ''}\n<h3>Parties today (${(b.partiesToday || []).length})</h3>\n${parties ? `<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\"><tr><th>Time</th><th>Booking</th><th>Room</th><th>Package</th><th>Kids</th><th>Stage</th></tr>${parties}</table>` : '<p>No parties today.</p>'}\n<p>Parties in the next 7 days: <b>${b.partiesNext7Days}</b></p>\n<h3>Follow-ups</h3>\n<ul>\n<li>Rebooking reminders due today: <b>${b.rebookingTasksDueToday}</b></li>\n<li>Open tasks due or overdue: <b>${b.openTasksDueToday}</b></li>\n<li>Unpaid orders: <b>${b.unpaidOrders}</b> (${money(b.unpaidTotal)})</li>\n</ul>\n<h3>Yesterday at the till (Square)</h3>\n<ul>\n<li>Visits with a customer attached: <b>${b.visitsYesterday}</b>, linked to a family: <b>${b.visitsYesterdayLinked}</b></li>\n<li>Spend on those visits: <b>${money(b.squareSpendYesterday)}</b></li>\n<li>Square sync: ${esc(b.squareSyncStatus)} (${esc(b.squareLastSync)})</li>\n</ul>\n<h3>AI</h3>\n<ul>\n<li>Claude calls yesterday: <b>${b.aiCallsYesterday}</b> (${money(b.aiCostYesterday)})</li>\n<li>This month: <b>${money(b.aiCostThisMonth)}</b> of ${money(b.aiMonthlyBudget)}</li>\n</ul>\n<p style=\"color:#667085;font-size:12px\">Sent by n8n from Salesforce (read-only). No customer contact details are included.</p>`;\nconst subject = `${b.needsAttention ? '[Attention] ' : ''}Fun Circle brief ${b.forDate}: ${(b.partiesToday || []).length} parties today, ${b.unpaidOrders} unpaid orders`;\nreturn [{ json: { subject, html } }];"
+      },
+      "name": "Format email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "OWNER_EMAIL_HERE",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Email the owner",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Every day 7:00": {
+      "main": [
+        [
+          {
+            "node": "Get brief from Salesforce",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get brief from Salesforce": {
+      "main": [
+        [
+          {
+            "node": "Format email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format email": {
+      "main": [
+        [
+          {
+            "node": "Email the owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "America/Vancouver",
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
