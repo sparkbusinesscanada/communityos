@@ -181,6 +181,11 @@
         <name>LightningComponentBundle</name>
     </types>
     <types>
+        <members>Account-Account Layout</members>
+        <members>Contact-Contact Layout</members>
+        <name>Layout</name>
+    </types>
+    <types>
         <members>Anthropic_API</members>
         <name>NamedCredential</name>
     </types>

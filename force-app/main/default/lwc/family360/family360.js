@@ -202,7 +202,8 @@ export default class Family360 extends NavigationMixin(LightningElement) {
         }
         return [
             { key: 'bookings', label: `Parties (${h.bookings.length})`, rows: h.bookings, empty: 'No bookings yet.' },
-            { key: 'orders', label: `Orders (${h.orders.length})`, rows: h.orders, empty: 'No Square orders.' },
+            { key: 'visits', label: `Visits (${(h.visits || []).length})`, rows: h.visits || [], empty: 'No Square visits linked to this family yet.' },
+            { key: 'orders', label: `Orders (${h.orders.length})`, rows: h.orders, empty: 'No orders in Salesforce.' },
             { key: 'notes', label: `Notes (${h.notes.length})`, rows: h.notes, empty: 'No staff notes yet.' },
             { key: 'enquiries', label: `Enquiries (${h.enquiries.length})`, rows: h.enquiries, empty: 'No enquiries logged.' },
             { key: 'camps', label: `Camps (${h.camps.length})`, rows: h.camps, empty: 'No camp registrations.' }

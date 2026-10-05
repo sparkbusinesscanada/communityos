@@ -23,6 +23,7 @@ private class VisitSummaryServiceTest {
         System.assertEquals(2, s.visitsLast90Days, 'One visit per day');
         System.assertEquals(1111.53, s.spend12Months);
         System.assert(s.mix.contains('Party 1') && s.mix.contains('Drop-in 1'), s.mix);
+        System.assertEquals(2, Family360Controller.getHousehold(accId).visits.size(), 'Visits tab lists the household visits');
         FamilyContextBuilder.Result ctx = FamilyContextBuilder.build(accId);
         String json = ctx.contextJson;
         System.assert(json.contains('squareVisits'), 'AI sees the aggregate');

@@ -40,6 +40,7 @@ public with sharing class Family360Controller {
         @AuraEnabled public List<Row> people = new List<Row>();
         @AuraEnabled public List<Row> bookings = new List<Row>();
         @AuraEnabled public List<Row> orders = new List<Row>();
+        @AuraEnabled public List<Row> visits = new List<Row>();
         @AuraEnabled public List<Row> camps = new List<Row>();
         @AuraEnabled public List<Row> notes = new List<Row>();
         @AuraEnabled public List<Row> openTasks = new List<Row>();
@@ -164,6 +165,18 @@ public with sharing class Family360Controller {
                 joinNonBlank(new List<String>{ o.Total_Amount_with_Taxes__c == null ? null : '$' + o.Total_Amount_with_Taxes__c.setScale(2), o.Laser_Tag_Package__c }, ' · '),
                 o.EffectiveDate == null ? null : Datetime.newInstance(o.EffectiveDate, Time.newInstance(12, 0, 0, 0)).format('d MMM yyyy'),
                 o.Invoice_Status__c != null ? o.Invoice_Status__c : o.Status));
+        }
+
+        for (Visit__c v : [
+            SELECT Id, Visited_At__c, Amount__c, Offering__c, Item_Summary__c, Counts_As_Visit__c
+            FROM Visit__c WHERE Household__c = :accountId WITH USER_MODE ORDER BY Visited_At__c DESC LIMIT :ROWS
+        ]) {
+            Row r = new Row(v.Id, v.Offering__c == null ? 'Square sale' : v.Offering__c,
+                joinNonBlank(new List<String>{ v.Amount__c == null ? null : '$' + v.Amount__c.setScale(2), v.Counts_As_Visit__c ? null : 'payment only' }, ' · '),
+                v.Visited_At__c == null ? null : v.Visited_At__c.format('d MMM yyyy'),
+                'Square');
+            r.body = v.Item_Summary__c;
+            h.visits.add(r);
         }
 
         if (!contactIds.isEmpty()) {
