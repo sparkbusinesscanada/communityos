@@ -34,6 +34,23 @@
 ### Remaining miss (v7)
 - One family has no headcount stored. Claude answered "not in records" instead of giving the room and saying the headcount is missing.
 
+## Family insights: rerun on prompt v6 (5 Oct 2026)
+
+Same script (`scripts/apex/eval-run.apex`), the 28 most recently modified COS households.
+
+| Metric | Prompt v2, no schema (29 Sep) | v6 + schema, before fix | **v6 + schema + empty-reply retry** |
+|---|---|---|---|
+| Contact / minor data leaks | 0 | 0 | **0** |
+| Valid output | 27/27 | 28/28 | **28/28** |
+| Useful (at least one insight or task) | 27/27 | 18/28 | **28/28** |
+| Tasks suggested | 58 | 32 | **56** |
+| Dropped by guardrails (unknown record or over the cap) | 0 | 2 | **3** |
+| Avg time in AI step | ~6.6 s | ~12.6 s | **~16.9 s** |
+
+**What happened:** with structured outputs on, Claude returned a schema-valid but empty reply (`summary: ""`) for 10 of 28 families. The fix treats an empty summary as a failure and retries once without the schema; the same guardrails apply to both attempts, and both calls are counted in the log. **Cost of the fix:** slower average time, because some families take two calls.
+
+**Total test spend on 5 Oct:** 122 Claude calls, ~409k input / ~96k output tokens, about **$1.78**.
+
 ## Family insights (29 Sep 2026, prompt v2)
 
 Script: `scripts/apex/eval-run.apex` (run in batches of 3 households; see header of the script).

@@ -4,6 +4,7 @@
         <apexClass>Family360Controller</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <custom>false</custom>
     <fieldPermissions>
         <editable>false</editable>
         <field>AI_Call_Log__c.Input_Tokens__c</field>
@@ -475,7 +476,6 @@
         <object>AI_Call_Log__c</object>
         <viewAllRecords>true</viewAllRecords>
     </objectPermissions>
-    <custom>false</custom>
     <tabVisibilities>
         <tab>AI_Call_Log__c</tab>
         <visibility>DefaultOn</visibility>

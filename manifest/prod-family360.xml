@@ -185,6 +185,7 @@
         <name>NamedCredential</name>
     </types>
     <types>
+        <members>CommunityOS_AI_Access</members>
         <members>CommunityOS_Family360</members>
         <members>CommunityOS_Visits_Read</members>
         <name>PermissionSet</name>
