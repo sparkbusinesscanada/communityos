@@ -1,4 +1,6 @@
-# Production release: Family 360 + AI (US-016 to US-018)
+# Production release: Family 360 + AI (US-016 to US-019)
+
+**Released 5 Oct 2026:** dry run 57/57, then quick deploy. AI access assigned to 3 users. Settings applied in rules mode with a $25 monthly budget. Rebooking reminders scheduled for 6:00 am. Waiting on: Anthropic API key in production, then switch to Claude and run the smoke test.
 
 Target org: `funcircle` (production). Package: `manifest/prod-family360.xml`.
 Already live in production: Square visit sync (US-017).
