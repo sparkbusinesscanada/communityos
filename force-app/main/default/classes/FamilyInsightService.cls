@@ -58,13 +58,24 @@ public with sharing class FamilyInsightService {
         Long started = System.currentTimeMillis();
         String raw;
         String limitMsg = AiGuard.dailyLimitMessage(client);
+        Map<String, Integer> usage;
+        Boolean retriedEmpty = false;
         try {
             if (limitMsg != null) {
                 throw new InsightException(limitMsg);
             }
             raw = client.complete(FamilyInsightPrompt.SYSTEM_PROMPT, ctx.contextJson, FamilyInsightPrompt.OUTPUT_SCHEMA);
+            usage = client.lastUsage();
+            try {
+                parseAndValidate(raw, ctx.tokenToRecordId, res);
+            } catch (EmptyReplyException empty) {
+                // A schema-valid but empty reply: retry once with prompt-only JSON. Same guardrails apply.
+                raw = client.complete(FamilyInsightPrompt.SYSTEM_PROMPT, ctx.contextJson);
+                usage = AiGuard.addUsage(usage, client.lastUsage());
+                retriedEmpty = true;
+                parseAndValidate(raw, ctx.tokenToRecordId, res);
+            }
             log.Response_Json__c = raw == null ? null : raw.left(131072);
-            parseAndValidate(raw, ctx.tokenToRecordId, res);
             res.ok = true;
             log.Status__c = res.droppedReasons.isEmpty() ? 'Success' : 'Filtered';
         } catch (Exception e) {
@@ -78,11 +89,14 @@ public with sharing class FamilyInsightService {
             res.error = limitMsg;
             log.Status__c = 'Limit reached';
         } else {
-            AiGuard.applyUsage(log, client);
+            AiGuard.applyUsage(log, usage == null ? client.lastUsage() : usage);
         }
         log.Tasks_Suggested__c = res.suggestedTasks.size();
         if (!res.droppedReasons.isEmpty()) {
             log.Error__c = ('Dropped by guardrails:\n' + String.join(res.droppedReasons, '\n')).left(32768);
+        }
+        if (retriedEmpty) {
+            log.Error__c = ('Empty structured reply; retried once without schema.\n' + (log.Error__c == null ? '' : log.Error__c)).left(32768);
         }
         if (deferredLogs != null) {
             deferredLogs.add(log);
@@ -114,6 +128,9 @@ public with sharing class FamilyInsightService {
         Map<String, Object> m = (Map<String, Object>) JSON.deserializeUntyped(trimmed);
         if (!(m.get('summary') instanceof String)) {
             throw new InsightException('missing summary');
+        }
+        if (String.isBlank((String) m.get('summary'))) {
+            throw new EmptyReplyException('empty summary');
         }
         res.summary = ((String) m.get('summary')).left(1000);
 
@@ -158,4 +175,6 @@ public with sharing class FamilyInsightService {
     }
 
     public class InsightException extends Exception {}
+
+    public class EmptyReplyException extends Exception {}
 }

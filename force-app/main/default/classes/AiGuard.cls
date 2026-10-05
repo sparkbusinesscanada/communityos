@@ -76,7 +76,23 @@ public with sharing class AiGuard {
     }
 
     public static void applyUsage(AI_Call_Log__c log, LlmClient client) {
-        Map<String, Integer> u = client.lastUsage();
+        applyUsage(log, client.lastUsage());
+    }
+
+    /** Adds two calls' usage together (used when an empty structured reply is retried). */
+    public static Map<String, Integer> addUsage(Map<String, Integer> a, Map<String, Integer> b) {
+        Map<String, Integer> out = new Map<String, Integer>();
+        for (String k : new List<String>{ 'inputTokens', 'outputTokens', 'retries' }) {
+            Integer x = a == null || a.get(k) == null ? 0 : a.get(k);
+            Integer y = b == null || b.get(k) == null ? 0 : b.get(k);
+            out.put(k, x + y);
+        }
+        out.put('retries', out.get('retries') + 1);
+        out.put('schemaEnforced', 0);
+        return out;
+    }
+
+    public static void applyUsage(AI_Call_Log__c log, Map<String, Integer> u) {
         if (u == null) {
             return;
         }

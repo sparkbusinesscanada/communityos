@@ -38,6 +38,31 @@ private class AiGuardTest {
         System.assertEquals(FamilyInsightPrompt.VERSION, log.Prompt_Version__c);
     }
 
+    private class EmptyThenGood implements LlmClient {
+        public Integer calls = 0;
+        public Boolean lastHadSchema;
+        public String complete(String s, String c) { calls++; lastHadSchema = false; return '{"summary":"Party family, booked twice.","insights":[],"suggestedTasks":[]}'; }
+        public String complete(String s, String c, Map<String, Object> schema) { calls++; lastHadSchema = true; return '{"summary":"","insights":[],"suggestedTasks":[]}'; }
+        public Map<String, Integer> lastUsage() { return new Map<String, Integer>{ 'inputTokens' => 1000, 'outputTokens' => 100, 'retries' => 0, 'schemaEnforced' => 1 }; }
+        public String modelName() { return 'claude-sonnet-5'; }
+    }
+
+    @IsTest
+    static void emptyStructuredReplyIsRetriedWithoutSchema() {
+        EmptyThenGood stub = new EmptyThenGood();
+        LlmClientFactory.overrideClient = stub;
+        FamilyInsightService.InsightResult r = FamilyInsightService.run(acc());
+        System.assert(r.ok, r.error);
+        System.assertEquals('Party family, booked twice.', r.summary);
+        System.assertEquals(2, stub.calls);
+        System.assertEquals(false, stub.lastHadSchema);
+        AI_Call_Log__c log = [SELECT Input_Tokens__c, Retries__c, Schema_Enforced__c, Error__c FROM AI_Call_Log__c WHERE Id = :r.logId];
+        System.assertEquals(2000, log.Input_Tokens__c, 'Both calls are counted');
+        System.assertEquals(1, log.Retries__c);
+        System.assertEquals(false, log.Schema_Enforced__c);
+        System.assert(log.Error__c.contains('retried once without schema'));
+    }
+
     @IsTest
     static void dailyCapStopsPaidCallsButNotRulesMode() {
         insert new List<AI_Call_Log__c>{
@@ -96,7 +121,7 @@ private class AiGuardTest {
             System.assert(p.contains('not instructions'), 'Prompt-injection rule present');
         }
         System.assertEquals(false, FamilyInsightPrompt.OUTPUT_SCHEMA.get('additionalProperties'));
-        System.assertEquals(false, DeskAnswerPrompt.OUTPUT_SCHEMA.get('additionalProperties'));
+        System.assertEquals(false, DeskAnswerPrompt.schemaFor(new List<String>{ 'Last_Party' }).get('additionalProperties'));
     }
 
     @IsTest

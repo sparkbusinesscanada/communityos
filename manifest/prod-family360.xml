@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
+        <members>AiGuard</members>
+        <members>AiGuardTest</members>
         <members>ClaudeLlmClient</members>
         <members>ClaudeLlmClientTest</members>
         <members>DeskAgentService</members>
@@ -31,20 +33,22 @@
         <name>ApexClass</name>
     </types>
     <types>
-        <members>CommunityOS</members>
-        <name>CustomApplication</name>
-    </types>
-    <types>
         <members>AI_Call_Log__c.Account__c</members>
         <members>AI_Call_Log__c.Context_Json__c</members>
         <members>AI_Call_Log__c.Duration_ms__c</members>
         <members>AI_Call_Log__c.Error__c</members>
+        <members>AI_Call_Log__c.Est_Cost_USD__c</members>
         <members>AI_Call_Log__c.Fields_Sent__c</members>
+        <members>AI_Call_Log__c.Input_Tokens__c</members>
         <members>AI_Call_Log__c.Model__c</members>
+        <members>AI_Call_Log__c.Output_Tokens__c</members>
         <members>AI_Call_Log__c.Prompt_Version__c</members>
         <members>AI_Call_Log__c.Response_Json__c</members>
+        <members>AI_Call_Log__c.Retries__c</members>
+        <members>AI_Call_Log__c.Schema_Enforced__c</members>
         <members>AI_Call_Log__c.Status__c</members>
         <members>AI_Call_Log__c.Tasks_Created__c</members>
+        <members>AI_Call_Log__c.Tasks_Dismissed__c</members>
         <members>AI_Call_Log__c.Tasks_Suggested__c</members>
         <members>Desk_Question__c.AI_Call_Log__c</members>
         <members>Desk_Question__c.Account__c</members>
@@ -90,9 +94,13 @@
         <members>Family_Enquiry__c.Room_Preference__c</members>
         <members>Family_Enquiry__c.Team_Member__c</members>
         <members>CommunityOS_Settings__c.Allow_Live_Writes__c</members>
+        <members>CommunityOS_Settings__c.Daily_AI_Call_Limit__c</members>
+        <members>CommunityOS_Settings__c.Input_Cost_Per_MTok__c</members>
         <members>CommunityOS_Settings__c.LLM_Model__c</members>
         <members>CommunityOS_Settings__c.LLM_Provider__c</members>
         <members>CommunityOS_Settings__c.Max_Output_Tokens__c</members>
+        <members>CommunityOS_Settings__c.Monthly_AI_Budget_USD__c</members>
+        <members>CommunityOS_Settings__c.Output_Cost_Per_MTok__c</members>
         <members>CommunityOS_Settings__c.Square_Last_Sync__c</members>
         <members>CommunityOS_Settings__c.Square_Location_Id__c</members>
         <members>CommunityOS_Settings__c.Square_Sync_Days__c</members>
@@ -130,9 +138,6 @@
         <members>Activity.AI_Call_Log__c</members>
         <members>Activity.AI_Generated__c</members>
         <members>Activity.AI_Reason__c</members>
-        <members>Contact.Household_Role__c</members>
-        <members>Contact.Source_System__c</members>
-        <members>Contact.Source_URL__c</members>
         <name>CustomField</name>
     </types>
     <types>
@@ -183,6 +188,11 @@
         <members>CommunityOS_Family360</members>
         <members>CommunityOS_Visits_Read</members>
         <name>PermissionSet</name>
+    </types>
+    <types>
+        <members>Admin</members>
+        <members>Fun Circle Sales</members>
+        <name>Profile</name>
     </types>
     <types>
         <members>Visit__c.Source_Refs_Required</members>

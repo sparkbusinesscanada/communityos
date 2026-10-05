@@ -73,6 +73,23 @@ private class DeskAgentServiceTest {
     }
 
     @IsTest
+    static void keyedAnswersFromStructuredOutputAreMatchedToQuestions() {
+        LlmClientFactory.overrideClient = new StubLlm(
+            '{"answers":{"Upcoming_Booking":{"status":"not_in_records","answer":"Nothing booked.","sources":[]},' +
+            '"Custom":{"status":"not_in_records","answer":"School is not in the records.","sources":[]}}}');
+        DeskAgentService.DeskResult r = DeskAgentService.ask(accountId(), new List<String>{ 'Upcoming_Booking' }, 'Which school do they attend?', null);
+        System.assert(r.ok, r.error);
+        System.assertEquals(2, r.answers.size());
+        for (DeskAgentService.Answer a : r.answers) {
+            System.assertEquals(DeskAgentService.STATUS_NOT_IN_RECORDS, a.status);
+            System.assert(!a.answer.contains('did not return'), 'Each question got its own answer: ' + a.answer);
+        }
+        Map<String, Object> answersSchema = (Map<String, Object>) ((Map<String, Object>) DeskAnswerPrompt.schemaFor(
+            new List<String>{ 'Upcoming_Booking', 'Custom' }).get('properties')).get('answers');
+        System.assertEquals(2, ((List<String>) answersSchema.get('required')).size(), 'Every question key is required');
+    }
+
+    @IsTest
     static void answerWithoutSourceIsBlocked() {
         LlmClientFactory.overrideClient = new StubLlm(
             '{"answers":[{"key":"Last_Party","status":"answered","answer":"Last March.","sources":["Booking 9"]}]}');

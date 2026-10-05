@@ -3,10 +3,6 @@
     <label>CommunityOS Family 360</label>
     <description>Use the Family 360 tab: search households, view history, get AI insights, create AI-suggested tasks and staff notes.</description>
     <hasActivationRequired>false</hasActivationRequired>
-    <applicationVisibilities>
-        <application>CommunityOS</application>
-        <visible>true</visible>
-    </applicationVisibilities>
     <classAccesses>
         <apexClass>Family360Controller</apexClass>
         <enabled>true</enabled>

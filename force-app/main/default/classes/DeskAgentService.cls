@@ -127,13 +127,24 @@ public with sharing class DeskAgentService {
         Long started = System.currentTimeMillis();
         Map<String, Answer> parsed = new Map<String, Answer>();
         String limitMsg = AiGuard.dailyLimitMessage(client);
+        Map<String, Integer> usage;
         try {
             if (limitMsg != null) {
                 throw new DeskLimitException(limitMsg);
             }
-            String raw = client.complete(DeskAnswerPrompt.SYSTEM_PROMPT, payload, DeskAnswerPrompt.OUTPUT_SCHEMA);
-            log.Response_Json__c = raw == null ? null : raw.left(131072);
+            List<String> askedKeys = new List<String>();
+            for (Question q : asked) { askedKeys.add(q.key); }
+            String raw = client.complete(DeskAnswerPrompt.SYSTEM_PROMPT, payload, DeskAnswerPrompt.schemaFor(askedKeys));
+            usage = client.lastUsage();
             parsed = parse(raw, ctx.tokenToRecordId);
+            if (allBlank(parsed)) {
+                // A schema-valid but empty reply: retry once with prompt-only JSON. Same guardrails apply.
+                raw = client.complete(DeskAnswerPrompt.SYSTEM_PROMPT, payload);
+                usage = AiGuard.addUsage(usage, client.lastUsage());
+                parsed = parse(raw, ctx.tokenToRecordId);
+                log.Error__c = 'Empty structured reply; retried once without schema.';
+            }
+            log.Response_Json__c = raw == null ? null : raw.left(131072);
             res.ok = true;
             log.Status__c = 'Success';
         } catch (Exception e) {
@@ -146,7 +157,7 @@ public with sharing class DeskAgentService {
             res.error = limitMsg;
             log.Status__c = 'Limit reached';
         } else {
-            AiGuard.applyUsage(log, client);
+            AiGuard.applyUsage(log, usage == null ? client.lastUsage() : usage);
         }
         insert as system log;
         res.logId = log.Id;
@@ -235,12 +246,21 @@ public with sharing class DeskAgentService {
             throw new DeskException('response contained contact details and was blocked');
         }
         Map<String, Object> m = (Map<String, Object>) JSON.deserializeUntyped(body);
-        if (!(m.get('answers') instanceof List<Object>)) {
+        List<Map<String, Object>> items = new List<Map<String, Object>>();
+        if (m.get('answers') instanceof Map<String, Object>) {
+            Map<String, Object> byKey = (Map<String, Object>) m.get('answers');
+            for (String k : byKey.keySet()) {
+                Map<String, Object> am = (Map<String, Object>) byKey.get(k);
+                am.put('key', k);
+                items.add(am);
+            }
+        } else if (m.get('answers') instanceof List<Object>) {
+            for (Object o : (List<Object>) m.get('answers')) { items.add((Map<String, Object>) o); }
+        } else {
             throw new DeskException('missing answers');
         }
         Map<String, Answer> out = new Map<String, Answer>();
-        for (Object o : (List<Object>) m.get('answers')) {
-            Map<String, Object> am = (Map<String, Object>) o;
+        for (Map<String, Object> am : items) {
             Answer a = new Answer();
             a.key = String.valueOf(am.get('key'));
             a.answer = am.get('answer') == null ? '' : String.valueOf(am.get('answer')).left(1000);
@@ -264,6 +284,18 @@ public with sharing class DeskAgentService {
             out.put(a.key, a);
         }
         return out;
+    }
+
+    private static Boolean allBlank(Map<String, Answer> parsed) {
+        if (parsed.isEmpty()) {
+            return true;
+        }
+        for (Answer a : parsed.values()) {
+            if (String.isNotBlank(a.answer)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static Answer missing(String key) {

@@ -1,0 +1,23 @@
+List<Object> out = new List<Object>();
+for (Id acc : new List<Id>{__ACCS__}) {
+    Map<String, Object> c = (Map<String, Object>) JSON.deserializeUntyped(FamilyContextBuilder.build(acc).contextJson);
+    Date today = Date.valueOf((String) c.get('today'));
+    String lastDate; List<String> lastTokens = new List<String>(); List<Object> lastDetail = new List<Object>(); String nextDate; List<String> nextTokens = new List<String>();
+    for (Object o : (List<Object>) c.get('bookings')) {
+        Map<String, Object> b = (Map<String, Object>) o;
+        if (b.get('eventDate') == null || b.get('stage') == 'Closed Lost') continue;
+        String d = (String) b.get('eventDate');
+        Boolean held = new Set<String>{ 'Closed Won', 'Invoice Paid / Party Confirmed', 'Confirmation Call Completed', 'Call for Final Confirmation' }.contains((String) b.get('stage'));
+        if (Date.valueOf(d) < today && !held) continue;
+        if (Date.valueOf(d) < today) { if (lastDate == null || d > lastDate) { lastDate = d; lastTokens = new List<String>(); lastDetail = new List<Object>(); } if (d == lastDate) { lastTokens.add((String) b.get('token')); lastDetail.add(new Map<String, Object>{ 'children' => b.get('estimatedChildren'), 'room' => b.get('room') }); } }
+        else { if (nextDate == null || d < nextDate) { nextDate = d; nextTokens = new List<String>(); } if (d == nextDate) nextTokens.add((String) b.get('token')); }
+    }
+    List<String> due = new List<String>();
+    for (Object o : (List<Object>) c.get('orders')) {
+        Map<String, Object> m = (Map<String, Object>) o;
+        String st = (String) m.get('invoiceStatus');
+        if (st == 'UNPAID' || st == 'DRAFT' || st == 'FAILED' || m.get('status') == 'Draft') due.add((String) m.get('token'));
+    }
+    out.add(new Map<String, Object>{ 'account' => acc, 'lastDate' => lastDate, 'lastTokens' => lastTokens, 'nextDate' => nextDate, 'nextTokens' => nextTokens, 'due' => due, 'lastDetail' => lastDetail });
+}
+System.debug('TRUTH ' + JSON.serialize(out));

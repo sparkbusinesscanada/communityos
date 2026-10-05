@@ -73,7 +73,7 @@ private class ClaudeLlmClientTest {
         SequenceMock m = new SequenceMock(new List<Integer>{ 200 });
         Test.setMock(HttpCalloutMock.class, m);
         ClaudeLlmClient c = new ClaudeLlmClient(null, null);
-        String out = c.complete('sys', '{}', DeskAnswerPrompt.OUTPUT_SCHEMA);
+        String out = c.complete('sys', '{}', DeskAnswerPrompt.schemaFor(new List<String>{ 'Last_Party' }));
         System.assertEquals('{"answers":[]}', out);
         Map<String, Object> sent = (Map<String, Object>) JSON.deserializeUntyped(m.last.getBody());
         Map<String, Object> fmt = (Map<String, Object>) ((Map<String, Object>) sent.get('output_config')).get('format');
