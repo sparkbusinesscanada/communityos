@@ -12,10 +12,17 @@ The workflow file is `n8n/owner-daily-brief.json`. The endpoint is the Apex clas
    - Callback URL: copy the **OAuth Redirect URL** shown on n8n's Salesforce credential screen (step 2).
    - Scopes: *Manage user data via APIs (api)* and *Perform requests at any time (refresh_token, offline_access)*.
    - Save, then copy the **Consumer Key** and **Consumer Secret**.
-2. **Add the Salesforce credential in n8n.** Credentials → New → **Salesforce OAuth2 API**. Environment: Production. Paste the key and secret, click **Connect**, and sign in as yourself.
+2. **Add the Salesforce credential in n8n.** Production enforces PKCE, so use the generic credential: Credentials → New → **OAuth2 API**.
+   - Grant Type: **PKCE**
+   - Authorization URL: `https://login.salesforce.com/services/oauth2/authorize`
+   - Access Token URL: `https://login.salesforce.com/services/oauth2/token`
+   - Client ID / Secret: Consumer Key / Secret
+   - Scope: `api refresh_token offline_access`
+   - Authentication: **Send credentials in body**
+   - Click **Connect** and sign in as yourself.
 3. **Add the Gmail credential in n8n.** Credentials → New → **Gmail OAuth2** → Sign in with Google.
 4. **Import the workflow.** Workflows → Import from file → `n8n/owner-daily-brief.json`.
 5. **Set credentials on two nodes.**
-   - On "Get brief from Salesforce", pick the Salesforce credential.
+   - On "Get brief from Salesforce", pick the OAuth2 API credential.
    - On "Email the owner", pick the Gmail credential and replace `OWNER_EMAIL_HERE` with your address.
 6. Click **Test workflow**, check the email, then switch the workflow **Active**.

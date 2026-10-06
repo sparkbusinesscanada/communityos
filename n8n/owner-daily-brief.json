@@ -23,8 +23,8 @@
     {
       "parameters": {
         "url": "https://funcircle.my.salesforce.com/services/apexrest/communityos/brief",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "salesforceOAuth2Api",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
         "options": {}
       },
       "name": "Get brief from Salesforce",
