@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="CommunityOS: Family 360 for owner-run family venues, built on Salesforce with Claude. 100xEngineers C7 capstone, live at Fun Circle.">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>CommunityOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a single reading column with wide bands for the masking demo and the numbers; one orange accent for "the family", teal for the system. */
+:root{
+  --bg:#f3f6f5; --surface:#ffffff; --ink:#17282c; --muted:#56686c; --line:#d5dfdd;
+  --teal:#1f6f78; --teal-soft:#e1efef; --orange:#c95a22; --orange-soft:#fbe9df;
+  --code-bg:#eaf0ef;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1a1c; --surface:#16252a; --ink:#e6eeec; --muted:#9db0b2; --line:#2a3d42;
+  --teal:#6cc0c6; --teal-soft:#183338; --orange:#f09a66; --orange-soft:#3a2418; --code-bg:#12242a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1a1c; --surface:#16252a; --ink:#e6eeec; --muted:#9db0b2; --line:#2a3d42;
+  --teal:#6cc0c6; --teal-soft:#183338; --orange:#f09a66; --orange-soft:#3a2418; --code-bg:#12242a; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 17px/1.6 var(--body);padding-inline:20px;padding-block:0 64px}
+.wrap{max-width:1040px;margin-inline:auto;display:flex;flex-direction:column;gap:72px}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.1;text-wrap:balance;margin:0}
+h2{font-size:clamp(28px,4vw,40px)}
+h3{font-size:20px}
+p{margin:0}
+a{color:var(--teal);text-underline-offset:3px}
+a:focus-visible,button:focus-visible{outline:3px solid var(--orange);outline-offset:2px;border-radius:4px}
+.eyebrow{font:600 13px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}
+.lede{font-size:20px;color:var(--muted);max-width:62ch}
+.section{display:flex;flex-direction:column;gap:24px}
+.mono{font-family:var(--mono)}
+.num{font-variant-numeric:tabular-nums}
+
+/* hero */
+header{padding-block:56px 0;display:flex;flex-direction:column;gap:24px}
+.status{display:inline-flex;align-items:center;gap:10px;font:600 14px/1 var(--mono);color:var(--teal);background:var(--teal-soft);padding:8px 12px;border-radius:999px;align-self:flex-start}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--teal);display:block}
+h1{font-size:clamp(48px,9vw,96px);letter-spacing:-.02em}
+h1 span{color:var(--orange)}
+.links{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none;font-weight:600}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* chapters */
+.chapters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:2px solid var(--ink)}
+.chapters div{padding:20px 20px 0 0;display:flex;flex-direction:column;gap:8px;min-width:0}
+.chapters b{font:600 13px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.chapters p{color:var(--muted);font-size:16px}
+.chapters h3{font-size:19px}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.stat{background:var(--surface);padding:20px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.stat strong{font:700 clamp(30px,4vw,44px)/1 var(--display);font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:15px;line-height:1.4}
+.stat.hot strong{color:var(--orange)}
+
+/* features */
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:0;border-top:1px solid var(--line)}
+.feature{padding:20px 24px 20px 0;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px;min-width:0}
+.feature p{color:var(--muted);font-size:16px}
+.feature .who{font:600 12px/1 var(--mono);color:var(--teal);letter-spacing:.06em;text-transform:uppercase}
+
+/* masking demo */
+.demo{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:20px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tab{font:600 14px/1 var(--body);padding:10px 14px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.panes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.pane{display:flex;flex-direction:column;gap:10px;min-width:0}
+.pane h4{margin:0;font:600 13px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+pre{margin:0;background:var(--code-bg);border-radius:10px;padding:16px;font:400 13.5px/1.6 var(--mono);white-space:pre-wrap;word-break:break-word;overflow-x:auto}
+.tok{color:var(--teal);font-weight:600}
+.pii{background:var(--orange-soft);color:var(--orange);font-weight:600;border-radius:3px;padding:0 2px}
+.gone{text-decoration:line-through;color:var(--muted)}
+.note{font-size:14px;color:var(--muted)}
+.ask{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:18px}
+.ask .q{font-weight:600}
+
+/* pipeline */
+.pipe{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;counter-reset:step}
+.step{border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--surface);display:flex;flex-direction:column;gap:6px;min-width:0}
+.step.model{border:2px solid var(--teal);background:var(--teal-soft)}
+.step .where{font:600 12px/1 var(--mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.step p{font-size:15px;color:var(--muted);line-height:1.45}
+.step.model p{color:var(--ink)}
+
+/* guardrails */
+table{width:100%;border-collapse:collapse;font-size:16px}
+th,td{text-align:left;padding:12px 16px 12px 0;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 13px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td:first-child{font-weight:600;white-space:nowrap}
+.tablewrap{overflow-x:auto}
+
+/* evals */
+.bars{display:flex;flex-direction:column;gap:14px}
+.bar{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr) 72px;gap:16px;align-items:center}
+.bar .label{font-size:15px}
+.track{height:28px;background:var(--code-bg);border-radius:6px;overflow:hidden}
+.fill{height:100%;background:var(--muted);opacity:.55}
+.bar.best .fill{background:var(--teal);opacity:1}
+.bar .val{font:600 15px/1 var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+
+/* quotes */
+.quotes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+blockquote{margin:0;padding:0 0 0 16px;border-left:3px solid var(--orange);font-size:17px;display:flex;flex-direction:column;gap:8px;min-width:0}
+blockquote cite{font-style:normal;font-size:14px;color:var(--muted)}
+
+/* roadmap */
+.road{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-top:4px solid var(--line)}
+.phase{padding:16px 16px 0 0;display:flex;flex-direction:column;gap:6px;position:relative;min-width:0}
+.phase::before{content:"";position:absolute;top:-10px;left:0;width:16px;height:16px;border-radius:50%;background:var(--bg);border:3px solid var(--line)}
+.phase.now::before{background:var(--orange);border-color:var(--orange)}
+.phase b{font:600 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.phase.now b{color:var(--orange)}
+.phase p{font-size:15px;color:var(--muted)}
+
+footer{border-top:1px solid var(--line);padding-top:24px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;color:var(--muted);font-size:15px}
+
+@media (max-width:820px){
+  .chapters,.quotes{grid-template-columns:minmax(0,1fr)}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .panes{grid-template-columns:minmax(0,1fr)}
+  .pipe{grid-template-columns:minmax(0,1fr)}
+  .road{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:28px}
+  .bar{grid-template-columns:minmax(0,1fr) 64px}
+  .bar .label{grid-column:1 / -1}
+}
+@media (prefers-reduced-motion:no-preference){.fill{transition:width .6s ease}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="status"><i></i>Live in production at Fun Circle, Surrey BC</span>
+  <h1>Community<span>OS</span></h1>
+  <p class="lede">Family 360 for owner-run family venues. One view of every household, with Claude helping part-time desk staff recognise families and bring them back.</p>
+  <div class="links">
+    <a class="btn primary" href="https://github.com/sparkbusinesscanada/communityos">Code on GitHub</a>
+    <a class="btn" href="https://claude.ai/artifact/YBn4wXXsWecvtjfZjogRCj">Case study</a>
+    <a class="btn" href="https://claude.ai/artifact/BRdp8SjD8k49FX1SjZgSpZ">Pitch deck</a>
+    <a class="btn" href="https://github.com/sparkbusinesscanada/communityos/blob/main/n8n/owner-daily-brief.json">n8n workflow JSON</a>
+    <a class="btn" href="https://github.com/sparkbusinesscanada/communityos/blob/main/docs/eval-results.md">Eval results</a>
+  </div>
+  <p class="note">Running in production at <span class="mono">funcircle.my.salesforce.com</span> (staff login required; it holds real customer data, so the demo video shows it instead).</p>
+  <div class="chapters">
+    <div><b>Past</b><h3>Salesforce consultant</h3><p>About 20 years in enterprise IT, 10 on Salesforce. Also the owner of the venue this runs in.</p></div>
+    <div><b>Present</b><h3>100xEngineers C7</h3><p>LLM APIs, context engineering, designed memory, guardrails, evals and n8n.</p></div>
+    <div><b>Future</b><h3>Salesforce Headless 360</h3><p>The platform as APIs and MCP tools for agents. Family 360 is built to be one of them.</p></div>
+  </div>
+</header>
+
+<section class="section" aria-labelledby="problem">
+  <span class="eyebrow">The problem</span>
+  <h2 id="problem">Party families come once and rarely return</h2>
+  <div class="stats">
+    <div class="stat hot"><strong class="num">7%</strong><span>of 2024 party families rebooked in 2025 (51 of 733)</span></div>
+    <div class="stat"><strong class="num">15.9%</strong><span>of last year's party families came back for a drop-in (69 of 435)</span></div>
+    <div class="stat"><strong class="num">2</strong><span>systems hold the story: Salesforce for parties, Square for visits</span></div>
+    <div class="stat"><strong class="num">1</strong><span>person who knew every family: the owner</span></div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="built">
+  <span class="eyebrow">What's live</span>
+  <h2 id="built">One household view, inside the CRM the venue already uses</h2>
+  <div class="features">
+    <div class="feature"><span class="who">Desk staff</span><h3>Family 360</h3><p>Search by phone or name across contacts, households and open leads. Parties, visits, notes and balances on one screen.</p></div>
+    <div class="feature"><span class="who">Desk staff · Claude</span><h3>Ask</h3><p>Type a plain question about a family. The answer cites the records it came from.</p></div>
+    <div class="feature"><span class="who">Desk staff · Claude</span><h3>AI Insights</h3><p>Up to three suggested next steps. Nothing happens until a person confirms.</p></div>
+    <div class="feature"><span class="who">Nightly, 2:30 am</span><h3>Square visits</h3><p>Walk-in orders load from Square and attach to the household by phone number.</p></div>
+    <div class="feature"><span class="who">Owner, 7:00 am</span><h3>Daily brief</h3><p>An n8n email: today's parties, the week ahead, unpaid orders and yesterday's visits.</p></div>
+    <div class="feature"><span class="who">Owner</span><h3>Usage banner</h3><p>Today's AI calls and tokens, and the month's spend against a US$25 budget.</p></div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="mask">
+  <span class="eyebrow">How Claude sees a family</span>
+  <h2 id="mask">The model never sees a real name, phone or child</h2>
+  <p class="lede">An illustrative household, not a real family. Switch views to follow one Ask request from the record to the screen.</p>
+  <div class="demo">
+    <div class="ask"><span class="q">Staff ask:</span><span>"Is their party confirmed, and do they owe anything?"</span></div>
+    <div class="tabs" role="tablist" aria-label="Request stage">
+      <button class="tab" role="tab" id="t-record" aria-selected="true" aria-controls="p-left">1. Salesforce record</button>
+      <button class="tab" role="tab" id="t-sent" aria-selected="false" aria-controls="p-left">2. What Claude receives</button>
+      <button class="tab" role="tab" id="t-back" aria-selected="false" aria-controls="p-left">3. What staff see</button>
+    </div>
+    <div class="panes">
+      <div class="pane"><h4 id="left-title">Household record</h4><pre id="p-left" role="tabpanel"></pre></div>
+      <div class="pane"><h4>Why</h4><p id="why" class="note"></p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="flow">
+  <span class="eyebrow">How the LLM is used</span>
+  <h2 id="flow">One call, wrapped on both sides by plain Apex</h2>
+  <div class="pipe">
+    <div class="step"><span class="where">Apex</span><h3>Gather</h3><p>Parties, visits, notes and balances for the household.</p></div>
+    <div class="step"><span class="where">Apex</span><h3>Mask</h3><p>Names become tokens. Children's details are never sent.</p></div>
+    <div class="step model"><span class="where">Anthropic API</span><h3>Claude</h3><p>Sonnet 5 through a Named Credential, with a JSON schema for the reply.</p></div>
+    <div class="step"><span class="where">Apex</span><h3>Check</h3><p>Unknown tokens dropped, contact details blocked, sources required.</p></div>
+    <div class="step"><span class="where">Staff</span><h3>Confirm</h3><p>Names restored on screen. A person decides what to act on.</p></div>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="guard">
+  <span class="eyebrow">Guardrails</span>
+  <h2 id="guard">Minimal by design, applied on every call</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Layer</th><th>What is enforced</th></tr></thead>
+    <tbody>
+      <tr><td>Data in</td><td>Pseudonymous tokens; no children's details, birthdays or allergy flags; phones and emails redacted</td></tr>
+      <tr><td>Prompt</td><td>Record text is data, never instructions; a glossary of booking stages; prompts versioned</td></tr>
+      <tr><td>Output</td><td>JSON schema with one required key per question; at most three suggested tasks; one retry if a reply comes back empty</td></tr>
+      <tr><td>Cost</td><td>200 calls a day and US$25 a month, with every call logged</td></tr>
+      <tr><td>People</td><td>Staff confirm every action; the AI never contacts a customer</td></tr>
+      <tr><td>Secrets</td><td>The API key lives in a Salesforce External Credential, granted by permission set</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="evals">
+  <span class="eyebrow">Evaluation</span>
+  <h2 id="evals">47 of 48 desk questions right, with zero data leaks</h2>
+  <p class="lede">Golden set: 8 real households × 6 questions, graded automatically against the masked record.</p>
+  <div class="bars" id="bars"></div>
+  <p class="note">The jump from v6 to v7 came from one finding: the model didn't know "Invoice Paid / Party Confirmed" means a party is booked. A glossary fixed it. AI Insights: 28 of 28 rated useful.</p>
+</section>
+
+<section class="section" aria-labelledby="prod">
+  <span class="eyebrow">In production</span>
+  <h2 id="prod">Running on Fun Circle's real data</h2>
+  <div class="stats">
+    <div class="stat"><strong class="num">12,583</strong><span>households matched by phone, no duplicates</span></div>
+    <div class="stat"><strong class="num">9,114</strong><span>Square visits loaded and synced nightly</span></div>
+    <div class="stat"><strong class="num">7:00</strong><span>owner brief in the inbox each morning</span></div>
+    <div class="stat"><strong class="num">US$25</strong><span>monthly AI budget, enforced in code</span></div>
+  </div>
+  <div class="quotes">
+    <blockquote>"Family 360 helps new or part-time staff get insights about a customer at their fingertips."<cite>Owner, Fun Circle</cite></blockquote>
+    <blockquote>"Ask and AI Insights help us engage with customers better."<cite>Owner, Fun Circle</cite></blockquote>
+    <blockquote>"The daily email gives me the option to plan how my day will go."<cite>Owner, Fun Circle</cite></blockquote>
+  </div>
+</section>
+
+<section class="section" aria-labelledby="next">
+  <span class="eyebrow">Roadmap</span>
+  <h2 id="next">A bare-minimum MVP, then a product</h2>
+  <p class="lede">The MVP proves the connection works safely and that staff use it. Each phase ships once the one before it is in daily use.</p>
+  <div class="road">
+    <div class="phase now"><b>Now</b><h3>MVP live</h3><p>One LLM path, minimal guardrails, one venue.</p></div>
+    <div class="phase"><b>Next</b><h3>Harden</h3><p>Cheaper Ask, better identity matching, follow-up drafts staff approve.</p></div>
+    <div class="phase"><b>Then</b><h3>Go headless</h3><p>Family 360 as MCP tools on Salesforce Headless 360, usable by any agent.</p></div>
+    <div class="phase"><b>Later</b><h3>Package</h3><p>A managed package or subscription for small family-wellness businesses.</p></div>
+  </div>
+</section>
+
+<footer>
+  <span>Parminder Singh Bagga · Spark Business Solutions · Owner, Fun Circle</span>
+  <span>100xEngineers Cohort 7 capstone · October 2026</span>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var views = {
+    "t-record": {
+      title: "Household record (Salesforce)",
+      html: 'Household:  The <span class="pii">Example</span> Family\nParent:     <span class="pii">Jordan Example</span>, <span class="pii">604-555-0142</span>\n            <span class="pii">jordan@example.com</span>\nChild:      <span class="pii">Riley</span>, birthday <span class="pii">2019-11-02</span>\nAllergy:    <span class="pii">peanuts</span>\nBooking 1:  Birthday party, 18 Oct\n            Stage: Invoice Paid / Party Confirmed\nOrder 2:    Pizza add-on, $86.00, unpaid\nVisits:     6 drop-in days since June\nNote:       "Asked about face painting, will call back"',
+      why: "Everything staff can see in Salesforce. The highlighted values are personal details that must not leave the org."
+    },
+    "t-sent": {
+      title: "Context sent to Claude",
+      html: '{\n  "household": "<span class="tok">FAMILY_1</span>",\n  "parent": "<span class="tok">PARENT_1</span>",\n  "children": <span class="gone">withheld</span>,\n  "bookings": [{ "ref": "Booking 1", "type": "Birthday party",\n    "date": "18 Oct", "stage": "Invoice Paid / Party Confirmed" }],\n  "orders": [{ "ref": "Order 2", "item": "Pizza add-on",\n    "amount": 86.00, "status": "unpaid" }],\n  "visitDays": 6,\n  "notes": ["Asked about face painting, will call back"]\n}',
+      why: "Names are swapped for tokens, phone and email are removed, and the child, birthday and allergy are never sent. Note text is passed as data, so an instruction hidden in a note is ignored."
+    },
+    "t-back": {
+      title: "Answer on the Family 360 screen",
+      html: 'Yes. <b>Jordan Example</b>\'s birthday party on 18 Oct is\nconfirmed and its invoice is paid. [Booking 1]\n\nThey still owe $86.00 for the pizza add-on. [Order 2]\n\nSuggested next step (needs your OK):\n  • Call to collect the $86.00 and answer the\n    face-painting question before 18 Oct.',
+      why: "Claude's reply came back as JSON keyed to the question. Apex checked it for unknown tokens and contact details, put the real name back, and kept the sources. Staff decide whether to make the call."
+    }
+  };
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  var pane = document.getElementById('p-left'), title = document.getElementById('left-title'), why = document.getElementById('why');
+  function show(id){
+    tabs.forEach(function(t){ t.setAttribute('aria-selected', t.id === id ? 'true' : 'false'); });
+    pane.innerHTML = views[id].html; title.textContent = views[id].title; why.textContent = views[id].why;
+    pane.setAttribute('aria-labelledby', id);
+  }
+  tabs.forEach(function(t, i){
+    t.addEventListener('click', function(){ show(t.id); });
+    t.addEventListener('keydown', function(e){
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft'){
+        var n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; n.focus(); show(n.id);
+      }
+    });
+  });
+  show('t-record');
+
+  var evals = [
+    { label: "Rules only (no LLM)", v: 38 },
+    { label: "Claude, prompt v6", v: 44 },
+    { label: "Claude, prompt v7", v: 47, best: true }
+  ];
+  var host = document.getElementById('bars');
+  evals.forEach(function(e){
+    var row = document.createElement('div'); row.className = 'bar' + (e.best ? ' best' : '');
+    row.innerHTML = '<span class="label">' + e.label + '</span><div class="track" role="img" aria-label="' + e.label + ': ' + e.v + ' of 48"><div class="fill" style="width:' + (e.v / 48 * 100).toFixed(1) + '%"></div></div><span class="val">' + e.v + '/48</span>';
+    host.appendChild(row);
+  });
+})();
+</script>
+
+</body>
+</html>
