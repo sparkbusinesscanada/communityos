@@ -31,19 +31,32 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        240,
+        220,
         0
       ]
     },
     {
       "parameters": {
-        "jsCode": "const b = $input.first().json;\nconst money = (n) => '$' + Number(n || 0).toFixed(2);\nconst esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));\nconst parties = (b.partiesToday || []).map((p) =>\n  `<tr><td>${esc(p.timeLabel)}</td><td>${esc(p.booking)}</td><td>${esc(p.room)}</td><td>${esc(p.packageName)}</td><td>${p.kids ?? ''}</td><td>${esc(p.stage)}</td></tr>`).join('');\nconst attention = (b.attention || []).map((a) => `<li>${esc(a)}</li>`).join('');\nconst html = `\n<h2>Fun Circle: morning brief for ${esc(b.forDate)}</h2>\n${b.needsAttention ? `<p style=\"color:#b42318\"><b>Needs attention</b></p><ul>${attention}</ul>` : ''}\n<h3>Parties today (${(b.partiesToday || []).length})</h3>\n${parties ? `<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\"><tr><th>Time</th><th>Booking</th><th>Room</th><th>Package</th><th>Kids</th><th>Stage</th></tr>${parties}</table>` : '<p>No parties today.</p>'}\n<p>Parties in the next 7 days: <b>${b.partiesNext7Days}</b></p>\n<h3>Follow-ups</h3>\n<ul>\n<li>Rebooking reminders due today: <b>${b.rebookingTasksDueToday}</b></li>\n<li>Open tasks due or overdue: <b>${b.openTasksDueToday}</b></li>\n<li>Unpaid orders: <b>${b.unpaidOrders}</b> (${money(b.unpaidTotal)})</li>\n</ul>\n<h3>Yesterday at the till (Square)</h3>\n<ul>\n<li>Visits with a customer attached: <b>${b.visitsYesterday}</b>, linked to a family: <b>${b.visitsYesterdayLinked}</b></li>\n<li>Spend on those visits: <b>${money(b.squareSpendYesterday)}</b></li>\n<li>Square sync: ${esc(b.squareSyncStatus)} (${esc(b.squareLastSync)})</li>\n</ul>\n<h3>AI</h3>\n<ul>\n<li>Claude calls yesterday: <b>${b.aiCallsYesterday}</b> (${money(b.aiCostYesterday)})</li>\n<li>This month: <b>${money(b.aiCostThisMonth)}</b> of ${money(b.aiMonthlyBudget)}</li>\n</ul>\n<p style=\"color:#667085;font-size:12px\">Sent by n8n from Salesforce (read-only). No customer contact details are included.</p>`;\nconst subject = `${b.needsAttention ? '[Attention] ' : ''}Fun Circle brief ${b.forDate}: ${(b.partiesToday || []).length} parties today, ${b.unpaidOrders} unpaid orders`;\nreturn [{ json: { subject, html } }];"
+        "jsCode": "// n8n Code node \"Rules and facts\" (deterministic, no AI).\n// Turns the Salesforce brief into numbered facts (F1..Fn) and fixed rule results (R1..Rn).\n// Same input always gives the same output. Change thresholds here and bump RULES_VERSION.\nconst RULES_VERSION = 'rules-v1';\nconst b = $input.first().json;\n\nconst n = (x) => Number(x || 0);\nconst money = (x) => '$' + n(x).toFixed(2);\nconst pct = (value, base) => (base > 0 ? Math.round((value / base) * 100) : null);\nconst weight = { red: 3, amber: 2, info: 0, green: 0 };\n\nconst facts = [];\nconst rules = [];\nconst fact = (label, value, compare) => {\n  const id = 'F' + (facts.length + 1);\n  facts.push({ id, label, value, compare: compare || null });\n  return id;\n};\nconst rule = (name, status, factIds, why, impact) => {\n  rules.push({ id: 'R' + (rules.length + 1), name, status, facts: factIds, why, score: weight[status] * impact });\n};\nconst day = b.yesterdayWeekday || 'yesterday';\n\n// Today\nconst partiesToday = (b.partiesToday || []).length;\nconst kidsToday = (b.partiesToday || []).reduce((s, p) => s + n(p.kids), 0);\nconst fToday = fact('Parties today', partiesToday, `${kidsToday} kids expected`);\n\n// R1 Drop-in visits vs the same weekday\nconst fDrop = fact(`Drop-in visits yesterday (${day})`, n(b.dropInsYesterday), `average of the last 4 ${day}s: ${n(b.dropInsSameWeekdayAvg4w)}`);\nconst dropPct = pct(n(b.dropInsYesterday), n(b.dropInsSameWeekdayAvg4w));\nrule('Drop-in traffic vs a normal ' + day,\n  dropPct === null ? 'info' : dropPct < 70 ? 'red' : dropPct < 90 ? 'amber' : 'green',\n  [fDrop], dropPct === null ? 'No baseline yet' : `${dropPct}% of a normal ${day}`, 2);\n\n// R2 Drop-in spend vs the same weekday\nconst fSpend = fact(`Drop-in spend yesterday (${day})`, money(b.dropInSpendYesterday), `average of the last 4 ${day}s: ${money(b.dropInSpendSameWeekdayAvg4w)}`);\nconst spendPct = pct(n(b.dropInSpendYesterday), n(b.dropInSpendSameWeekdayAvg4w));\nrule('Drop-in spend vs a normal ' + day,\n  spendPct === null ? 'info' : spendPct < 70 ? 'red' : spendPct < 90 ? 'amber' : 'green',\n  [fSpend], spendPct === null ? 'No baseline yet' : `${spendPct}% of a normal ${day}`, 2);\n\n// R3 Week vs week\nconst fWeek = fact('Drop-in visits, last 7 days', n(b.dropInsLast7Days), `previous 7 days: ${n(b.dropInsPrior7Days)}`);\nconst weekPct = pct(n(b.dropInsLast7Days), n(b.dropInsPrior7Days));\nrule('Drop-in visits, week vs week',\n  weekPct === null ? 'info' : weekPct < 70 ? 'red' : weekPct < 90 ? 'amber' : 'green',\n  [fWeek], weekPct === null ? 'No baseline yet' : `${weekPct}% of the previous week`, 2);\n\n// R4 / R5 Parties not yet confirmed\nconst fP2 = fact('Parties in the next 2 days not yet confirmed or paid', n(b.partiesNext2DaysNotConfirmed));\nrule('Parties about to happen without confirmation', n(b.partiesNext2DaysNotConfirmed) > 0 ? 'red' : 'green',\n  [fP2], n(b.partiesNext2DaysNotConfirmed) > 0 ? 'Confirm before the party day' : 'All confirmed', 3);\nconst fP7 = fact('Parties in the next 7 days not yet confirmed or paid', n(b.partiesNext7DaysNotConfirmed), `of ${n(b.partiesNext7Days)} parties in the next 7 days`);\nrule('Parties this week without confirmation', n(b.partiesNext7DaysNotConfirmed) > 0 ? 'amber' : 'green',\n  [fP7], n(b.partiesNext7DaysNotConfirmed) > 0 ? 'Chase confirmations this week' : 'All confirmed', 2);\n\n// R6 New party bookings, week vs week\nconst fBook = fact('New party bookings, last 7 days', n(b.partyBookingsLast7Days), `previous 7 days: ${n(b.partyBookingsPrior7Days)}`);\nconst bookPct = pct(n(b.partyBookingsLast7Days), n(b.partyBookingsPrior7Days));\nconst bookStatus = n(b.partyBookingsLast7Days) + n(b.partyBookingsPrior7Days) === 0 ? 'amber'\n  : bookPct === null ? 'green' : bookPct < 70 ? 'red' : bookPct < 100 ? 'amber' : 'green';\nrule('Party bookings, week vs week', bookStatus, [fBook],\n  bookPct === null ? (n(b.partyBookingsLast7Days) > 0 ? 'Bookings up from zero' : 'No new bookings in 14 days') : `${bookPct}% of the previous week`, 3);\n\n// R7 Open enquiries\nconst fEnq = fact('Open party enquiries not yet booked', n(b.openPartyEnquiries),\n  b.oldestOpenEnquiryDays == null ? null : `oldest is ${n(b.oldestOpenEnquiryDays)} days old`);\nrule('Enquiries waiting to be booked',\n  n(b.openPartyEnquiries) === 0 ? 'green' : n(b.oldestOpenEnquiryDays) > 7 ? 'red' : 'amber',\n  [fEnq], n(b.openPartyEnquiries) === 0 ? 'None open' : 'Each open enquiry is a party not yet won', 3);\n\n// R8 Money owed\nconst fU30 = fact('Unpaid orders older than 30 days', n(b.unpaidOver30Days), `worth ${money(b.unpaidOver30DaysTotal)}`);\nconst fU8 = fact('Unpaid orders 8 to 30 days old', n(b.unpaid8To30Days));\nconst fU7 = fact('Unpaid orders up to 7 days old', n(b.unpaidUpTo7Days), `all unpaid: ${n(b.unpaidOrders)} worth ${money(b.unpaidTotal)}`);\nrule('Money owed', n(b.unpaidOver30Days) > 0 ? 'red' : n(b.unpaid8To30Days) > 0 ? 'amber' : 'green',\n  [fU30, fU8, fU7], n(b.unpaidOver30Days) > 0 ? 'Old unpaid orders: collect or close them' : 'Nothing old outstanding', 2);\n\n// R9 Rebooking list\nconst fReb = fact('Families whose party anniversary is in the next 30 days with nothing booked', n(b.rebookingCandidatesNext30Days),\n  `rebooking reminders due today: ${n(b.rebookingTasksDueToday)}`);\nrule('Rebooking opportunity', n(b.rebookingCandidatesNext30Days) > 0 ? 'amber' : 'green',\n  [fReb], n(b.rebookingCandidatesNext30Days) > 0 ? 'Past party families to invite back' : 'No anniversaries coming up', 3);\n\n// R10 Overdue tasks\nconst fTasks = fact('Open tasks due today or overdue', n(b.openTasksDueToday));\nrule('Overdue follow-ups', n(b.openTasksDueToday) > 10 ? 'red' : n(b.openTasksDueToday) > 0 ? 'amber' : 'green',\n  [fTasks], n(b.openTasksDueToday) > 0 ? 'Follow-ups are piling up' : 'Up to date', 1);\n\n// R11 Square sync health\nconst syncOk = !b.squareSyncStatus || String(b.squareSyncStatus).startsWith('OK');\nconst fSync = fact('Square visit sync', syncOk ? 'OK' : 'Failing', b.squareLastSync ? `last run ${b.squareLastSync}` : null);\nrule('Square data is current', syncOk ? 'green' : 'red', [fSync], syncOk ? 'Visits are up to date' : 'Visit numbers may be missing', 2);\n\n// R12 AI budget\nconst budget = b.aiMonthlyBudget == null ? null : n(b.aiMonthlyBudget);\nconst spent = n(b.aiCostThisMonth);\nconst fAi = fact('AI spend this month', money(spent), budget == null ? 'no budget set' : `budget ${money(budget)}`);\nconst budgetPct = budget ? pct(spent, budget) : null;\nrule('AI budget', budgetPct === null ? 'info' : budgetPct >= 100 ? 'red' : budgetPct >= 80 ? 'amber' : 'green',\n  [fAi], budgetPct === null ? 'No budget set' : `${budgetPct}% of the monthly budget used`, 1);\n\nrules.sort((a, c) => c.score - a.score || Number(a.id.slice(1)) - Number(c.id.slice(1)));\n\nreturn [{ json: { brief: b, rulesVersion: RULES_VERSION, facts, rules } }];\n"
       },
-      "name": "Format email",
+      "name": "Rules and facts",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        480,
+        440,
+        0
+      ],
+      "notes": "Deterministic: numbered facts and fixed rules. No AI."
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node \"Build email\" for the daily brief: rules triggered and exact numbers. No AI (the AI review is weekly).\nconst base = $('Rules and facts').first().json;\nconst b = base.brief;\nconst esc = (s) => String(s ?? '').replace(/[&<>\"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[c]));\nconst colour = { red: '#b42318', amber: '#b54708', green: '#067647', info: '#475467' };\nconst chip = (s) => `<span style=\"display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600;color:#fff;background:${colour[s] || '#475467'}\">${esc(s.toUpperCase())}</span>`;\nconst reds = base.rules.filter((r) => r.status === 'red').length;\nconst ambers = base.rules.filter((r) => r.status === 'amber').length;\n\nconst adviceHtml = '<p style=\"color:#475467;font-size:13px\">Exact numbers and fixed rules only. The AI business review arrives every Monday.</p>';\n\nconst ruleRows = base.rules.filter((r) => r.status !== 'green').map((r) =>\n  `<tr><td>${chip(r.status)}</td><td>${esc(r.name)}</td><td>${esc(r.why)}</td><td style=\"color:#475467\">${esc(r.facts.join(', '))}</td></tr>`).join('');\nconst greens = base.rules.filter((r) => r.status === 'green').map((r) => esc(r.name)).join('; ');\nconst factRows = base.facts.map((f) =>\n  `<tr><td style=\"color:#475467\">${esc(f.id)}</td><td>${esc(f.label)}</td><td><b>${esc(f.value)}</b></td><td style=\"color:#475467\">${esc(f.compare || '')}</td></tr>`).join('');\nconst parties = (b.partiesToday || []).map((p) =>\n  `<tr><td>${esc(p.timeLabel)}</td><td>${esc(p.booking)}</td><td>${esc(p.room)}</td><td>${esc(p.packageName)}</td><td>${p.kids ?? ''}</td><td>${esc(p.stage)}</td></tr>`).join('');\nconst table = (head, rows) => `<table cellpadding=\"6\" cellspacing=\"0\" style=\"border-collapse:collapse;font-size:13px;width:100%\">${head}${rows}</table>`;\n\nconst html = `\n<div style=\"font-family:Arial,Helvetica,sans-serif;max-width:720px;color:#101828\">\n<h2 style=\"margin:0\">Fun Circle \u00b7 ${esc(b.forDate)}</h2>\n<p style=\"margin:4px 0;color:#475467\">${reds} red, ${ambers} amber \u00b7 ${(b.partiesToday || []).length} parties today</p>\n${adviceHtml}\n<h3>Rules triggered (${esc(base.rulesVersion)})</h3>\n${ruleRows ? table('<tr style=\"text-align:left\"><th>Status</th><th>Rule</th><th>Why</th><th>Facts</th></tr>', ruleRows) : '<p>Nothing triggered.</p>'}\n${greens ? `<p style=\"color:#067647;font-size:13px\">On track: ${greens}</p>` : ''}\n<h3>Exact numbers</h3>\n${table('<tr style=\"text-align:left\"><th></th><th>Measure</th><th>Value</th><th>Compared with</th></tr>', factRows)}\n<h3>Parties today</h3>\n${parties ? table('<tr style=\"text-align:left\"><th>Time</th><th>Booking</th><th>Room</th><th>Package</th><th>Kids</th><th>Stage</th></tr>', parties) : '<p>No parties today.</p>'}\n<p style=\"color:#667085;font-size:12px;margin-top:16px\">Numbers: Salesforce (read-only). Rules: fixed code in n8n (${esc(base.rulesVersion)}). No AI is used in the daily brief. Nothing is sent to customers.</p>\n</div>`;\nconst subject = `Fun Circle ${b.forDate}: ${reds} red, ${ambers} amber, ${(b.partiesToday || []).length} parties today`;\nreturn [{ json: { subject, html } }];\n"
+      },
+      "name": "Build email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
         0
       ]
     },
@@ -61,7 +74,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        720,
+        880,
         0
       ]
     }
@@ -82,14 +95,25 @@
       "main": [
         [
           {
-            "node": "Format email",
+            "node": "Rules and facts",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Format email": {
+    "Rules and facts": {
+      "main": [
+        [
+          {
+            "node": "Build email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build email": {
       "main": [
         [
           {
